@@ -444,7 +444,6 @@ export default function Play({ game }: { game: GameModule }) {
                       {level.name}
                       {suggested === level.id && <span className="level-chip">Sana uygun</span>}
                     </strong>
-                    <small>{level.description}</small>
                   </span>
                 </label>
               ))}
