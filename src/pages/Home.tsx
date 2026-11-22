@@ -7,7 +7,9 @@ import { canPromptInstall, isInstalledApp, onInstallChange, promptInstall } from
 import { duePuzzles } from '../core/puzzles/leitner'
 import { OUTCOME_LABELS, type RecordOutcome } from '../core/records'
 import { playerSummary, type PlayerSummary } from '../core/stats/player'
-import { signed } from '../core/stats/points'
+import { MOVE_POINTS, signed } from '../core/stats/points'
+import { pointsRank, rangeText, rankLadder } from '../core/stats/rank'
+import { CLASSIFICATION_INFO, type Classification } from '../core/classify'
 import { setGameTheme } from '../core/theme'
 import { navigate } from '../router'
 import { PHASE_LABELS, type GameModule, type GamePhase } from '../core/types'
@@ -36,7 +38,7 @@ export default function Home() {
   /** Every game's summary, loaded up front so switching games is instant. */
   const [progress, setProgress] = useState<Record<string, Progress>>({})
   const touchStart = useRef<{ x: number; y: number } | null>(null)
-  const [panel, setPanel] = useState<'data' | 'install' | 'cloud' | null>(null)
+  const [panel, setPanel] = useState<'data' | 'install' | 'cloud' | 'ranks' | null>(null)
   /** Bumped after a backup is loaded so the progress card is read again. */
   const [dataVersion, setDataVersion] = useState(0)
 
@@ -198,7 +200,7 @@ export default function Home() {
                 badge={current?.due || undefined}
               />
             </nav>
-            <PlayerCard game={selected} progress={current} />
+            <PlayerCard game={selected} progress={current} onShowRanks={() => setPanel('ranks')} />
           </>
         )}
       </main>
@@ -219,10 +221,11 @@ export default function Home() {
       </footer>
 
       {panel && (
-        <Modal title={PANEL_TITLES[panel]} onClose={() => setPanel(null)}>
+        <Modal title={panel === 'ranks' && selected ? `${PANEL_TITLES.ranks} · ${selected.name}` : PANEL_TITLES[panel]} onClose={() => setPanel(null)}>
           {panel === 'data' && <DataCard onRestored={() => setDataVersion((v) => v + 1)} />}
           {panel === 'install' && <InstallCard />}
           {panel === 'cloud' && <CloudCard onSynced={() => setDataVersion((v) => v + 1)} />}
+          {panel === 'ranks' && selected && <RankCard game={selected} points={current?.summary.points ?? 0} />}
         </Modal>
       )}
     </div>
@@ -275,7 +278,7 @@ const shortDate = (timestamp: number) => new Date(timestamp).toLocaleDateString(
  * The player's summary for the selected game: playing level and the bot to play, the part of the
  * game that goes wrong most, what to watch out for, and the latest games (details are in Analiz).
  */
-function PlayerCard({ game, progress }: { game: GameModule; progress: Progress | null }) {
+function PlayerCard({ game, progress, onShowRanks }: { game: GameModule; progress: Progress | null; onShowRanks: () => void }) {
   if (!progress) return <section className="player-card" aria-busy="true" />
   const summary = progress.summary
   const tips: string[] = []
@@ -286,6 +289,7 @@ function PlayerCard({ game, progress }: { game: GameModule; progress: Progress |
   }
   const hasPhases = summary.phases.some((p) => p.moves > 0)
   const top = Math.max(1, ...summary.phases.map((p) => p.per10))
+  const rank = pointsRank(summary.points, game.id, game.levels)
 
   return (
     <section className="player-card">
@@ -293,19 +297,25 @@ function PlayerCard({ game, progress }: { game: GameModule; progress: Progress |
         <h2>
           Oyuncu özeti<span className="player-game-name"> · {game.name}</span>
         </h2>
-        <span className="points-badge" title="Doğru hamleler ve kazanılan oyunlar puan getirir, yanlışlar ve kaybedilen oyunlar götürür.">
+        <button type="button" className="points-badge" onClick={onShowRanks} title="Puan düzeylerini gör">
           ⭐ {summary.points.toLocaleString('tr-TR')} puan
           {summary.lastPoints !== null && summary.lastPoints !== 0 && (
             <small className={summary.lastPoints > 0 ? 'up' : 'down'}>{signed(summary.lastPoints)}</small>
           )}
-        </span>
+        </button>
       </div>
       <div className="player-levels">
-        <div className="level-box">
-          <span>Oynayış düzeyin</span>
-          <strong>{summary.level !== null ? levelName(game, summary.level) : '—'}</strong>
-          <small>{summary.level !== null ? `${summary.level}. seviye bot gibi oynuyorsun` : 'Bilgisayara karşı birkaç oyun oyna'}</small>
-        </div>
+        <button type="button" className="level-box rank-box" onClick={onShowRanks} title="Puan düzeylerini gör">
+          <span>Puan düzeyin</span>
+          <strong>
+            <span className="rank-number">{rank.level}. düzey · </span>
+            {rank.name}
+          </strong>
+          <span className="rank-bar" aria-hidden="true">
+            <span style={{ width: `${Math.round(rank.progress * 100)}%` }} />
+          </span>
+          <small>{rank.next ? `${rank.next.name} düzeyine ${rank.toNext.toLocaleString('tr-TR')} puan kaldı` : 'En üst düzeydesin!'}</small>
+        </button>
         <div className="level-box suggested">
           <span>Sana uygun bot</span>
           <strong>
@@ -534,7 +544,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
-const PANEL_TITLES = { data: 'Verilerin', install: 'Uygulama olarak kur', cloud: 'Google ile eşitleme' } as const
+const PANEL_TITLES = { data: 'Verilerin', install: 'Uygulama olarak kur', cloud: 'Google ile eşitleme', ranks: 'Puan düzeyleri' } as const
 
 function syncedText(result: SyncResult): string {
   if (result.games === 0 && result.puzzles === 0) return 'Eşitlendi. Her şey güncel.'
@@ -615,6 +625,43 @@ function CloudCard({ onSynced }: { onSynced: () => void }) {
           {message.text}
         </p>
       )}
+    </section>
+  )
+}
+
+/** Moves that change the points, best first (moves worth 0 are left out). */
+const POINT_MOVES = (Object.keys(MOVE_POINTS) as Classification[]).filter((c) => MOVE_POINTS[c] !== 0)
+
+/** Every level of the game with its points range, where the user is, and how points are earned. */
+function RankCard({ game, points }: { game: GameModule; points: number }) {
+  const rank = pointsRank(points, game.id, game.levels)
+  return (
+    <section className="rank-card">
+      <p className="small">
+        <strong>{points.toLocaleString('tr-TR')} puan</strong> ile <strong>{rank.name}</strong> düzeyindesin.
+        {rank.next && <> {rank.next.name} için {rank.toNext.toLocaleString('tr-TR')} puan daha topla.</>}
+      </p>
+      <ol className="rank-ladder">
+        {rankLadder(game.id, game.levels)
+          .slice()
+          .reverse()
+          .map((step) => (
+            <li key={step.level} className={step.level === rank.level ? 'current' : step.level < rank.level ? 'passed' : ''}>
+              <span className="rank-name">
+                {step.level}. {step.name}
+              </span>
+              <span className="rank-range">{rangeText(step)}</span>
+              {step.level === rank.level && <span className="rank-here">sen buradasın</span>}
+            </li>
+          ))}
+      </ol>
+      <h3>Puan nasıl kazanılır?</h3>
+      <p className="muted small">
+        Her hamlen analiz edilir:{' '}
+        {POINT_MOVES.map((c) => `${CLASSIFICATION_INFO[c].label} ${signed(MOVE_POINTS[c])}`).join(', ')}. Bilgisayarı yenmek 5 × bot
+        seviyesi kadar puan getirir, kaybetmek 3 × (9 − bot seviyesi) kadar götürür: güçlü bota kazanmak daha değerli, zayıf
+        bota kaybetmek daha pahalı. Aralıklar oyunun hamle sayısına göre ayarlı: bir oyunda çok hamle yapılan oyunlarda aralıklar daha geniş.
+      </p>
     </section>
   )
 }

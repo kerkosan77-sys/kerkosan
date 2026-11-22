@@ -9,7 +9,8 @@ import { syncQuietly } from '../core/cloud'
 import { CLASSIFICATION_INFO, isErrorClass } from '../core/classify'
 import { moveSound, sounds } from '../core/sound'
 import { playerSummary } from '../core/stats/player'
-import { signed } from '../core/stats/points'
+import { pointsTotal, signed } from '../core/stats/points'
+import { pointsRank, type PointsRank } from '../core/stats/rank'
 import { EngineCancelledError } from '../core/engine'
 import { MODE_LABELS, dotColor, newId, resignation } from '../core/records'
 import type { CoachWarning, GameEnd, GameModule, Level, MoveRecord, Side } from '../core/types'
@@ -91,17 +92,34 @@ export default function Play({ game }: { game: GameModule }) {
   /** The bot level the player summary suggests (marked in the level list). */
   const [suggested, setSuggested] = useState<number | null>(null)
   const [endJob, setEndJob] = useState<AnalysisJob | null>(null)
+  /** The points total and level after the finished game, and the level before it. */
+  const [endRank, setEndRank] = useState<EndRank | null>(null)
 
   // The finished game is analysed in the background; its puzzles are saved by themselves.
   useEffect(() => {
     setEndJob(null)
+    setEndRank(null)
     if (!savedGameId) return
-    return watchAnalysis(savedGameId, (job) => {
+    let alive = true
+    const stop = watchAnalysis(savedGameId, (job) => {
       setEndJob(job)
+      if (job.status !== 'done') return
       // Signed in to Google during this visit: the finished game goes to the other devices too.
-      if (job.status === 'done') void syncQuietly()
+      void syncQuietly()
+      listGames(game.id)
+        .then((games) => {
+          if (!alive) return
+          const { total, perGame } = pointsTotal(games)
+          const before = pointsRank(total - (perGame.get(savedGameId) ?? 0), game.id, game.levels)
+          setEndRank({ total, rank: pointsRank(total, game.id, game.levels), previousLevel: before.level })
+        })
+        .catch(() => undefined)
     })
-  }, [savedGameId])
+    return () => {
+      alive = false
+      stop()
+    }
+  }, [savedGameId, game])
 
   // Learning mode: the coach's own engine looks at every position as the game goes.
   const liveState = stateRef.current
@@ -545,7 +563,7 @@ export default function Play({ game }: { game: GameModule }) {
               <h2>{end.title}</h2>
               <p>{end.detail}</p>
               {scoringOpen && game.scoring && <p className="muted small">{game.scoring.help}</p>}
-              {endJob && <EndAnalysisStatus job={endJob} />}
+              {endJob && <EndAnalysisStatus job={endJob} rank={endRank} />}
               {savedGameId && (
                 <button
                   type="button"
@@ -786,16 +804,34 @@ function CoachPanel({
   )
 }
 
-/** Progress of the background analysis of the game that just ended, and how many puzzles it saved. */
-function EndAnalysisStatus({ job }: { job: AnalysisJob }) {
+interface EndRank {
+  total: number
+  rank: PointsRank
+  previousLevel: number
+}
+
+/** "Toplam 340 puan · Kolay+ düzeyi (Orta'ya 160 puan kaldı)", with a cheer when the game moved the player up a level. */
+function rankText({ total, rank, previousLevel }: EndRank): string {
+  const where = `Toplam ${total.toLocaleString('tr-TR')} puan · ${rank.level}. düzey ${rank.name}`
+  const left = rank.next ? ` (${rank.next.name} düzeyine ${rank.toNext.toLocaleString('tr-TR')} puan kaldı).` : ' (en üst düzey).'
+  if (rank.level > previousLevel) return `🎉 Tebrikler, ${rank.name} düzeyine çıktın! ${where}${left}`
+  if (rank.level < previousLevel) return `${where}${left} Bir düzey indin: acele etme, tekrar çıkarsın.`
+  return `${where}${left}`
+}
+
+/** Progress of the background analysis of the game that just ended, how many puzzles it saved, and the points level. */
+function EndAnalysisStatus({ job, rank }: { job: AnalysisJob; rank: EndRank | null }) {
   if (job.status === 'error') return <p className="end-analysis error">Analiz yapılamadı: {job.error}</p>
   if (job.status === 'done') {
     const n = job.newPuzzles ?? 0
     return (
-      <p className="end-analysis done">
-        ✓ Analiz hazır.{job.points !== undefined && ` Bu oyundan ${signed(job.points)} puan.`}{' '}
-        {n > 0 ? `Hatalarından ${n} yeni bulmaca kaydedildi.` : 'Bu oyundan yeni bulmaca çıkmadı: büyük bir hata yapmadın.'}
-      </p>
+      <div className="end-analysis done">
+        <p>
+          ✓ Analiz hazır.{job.points !== undefined && ` Bu oyundan ${signed(job.points)} puan.`}{' '}
+          {n > 0 ? `Hatalarından ${n} yeni bulmaca kaydedildi.` : 'Bu oyundan yeni bulmaca çıkmadı: büyük bir hata yapmadın.'}
+        </p>
+        {rank && <p className={`end-rank${rank.rank.level > rank.previousLevel ? ' level-up' : ''}`}>{rankText(rank)}</p>}
+      </div>
     )
   }
   const pct = job.total > 0 ? Math.round((job.done / job.total) * 100) : 0
