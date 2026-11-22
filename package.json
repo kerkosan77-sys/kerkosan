@@ -1,0 +1,35 @@
+{
+  "name": "satranc-koc",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/copy-stockfish.mjs",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "app": "npm run build && npm run app:serve -- --open",
+    "app:serve": "vite preview --port 4173 --strictPort",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "icons": "node scripts/make-icons.mjs",
+    "start": "node scripts/start-app.mjs"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "idb": "^8.0.4",
+    "react": "^19.3.1",
+    "react-chessboard": "^5.12.1",
+    "react-dom": "^19.3.1",
+    "stockfish": "^19.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "fake-indexeddb": "^6.2.8",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}
