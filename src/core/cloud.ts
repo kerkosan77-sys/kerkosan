@@ -6,44 +6,29 @@ import { exportBackup, importBackup, readBackup } from '../db/db'
  * Sync through the user's own Google Drive: the whole backup is kept as one file in the app's
  * hidden Drive folder (appDataFolder, which only this app can see). Syncing first adds what is in
  * Drive to this device (nothing is deleted), then writes this device's data back, so every device
- * ends up with everything. Sign-in uses Google Identity Services; the access token lives only in
- * memory, so after the app is reopened one tap on "Eşitle" signs in again (usually without a question).
+ * ends up with everything.
+ *
+ * Sign-in goes to Google's page and Google sends the user back to the app with an access token in
+ * the address (#access_token=…). This works everywhere, unlike a sign-in popup, which phones,
+ * installed apps and links opened inside other apps cannot hand back to the app (the user is left
+ * on a black page). The token lives only in memory, so after the app is reopened one tap on
+ * "Eşitle" signs in again (usually without a question).
  */
 
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata openid email'
 const FILE_NAME = 'akil-oyunlari-yedek.json'
 const STATE_KEY = 'akil-oyunlari-bulut'
+/** The sign-in in progress: a random check value and the page to come back to. */
+const SIGN_IN_KEY = 'akil-oyunlari-giris'
 
 export interface CloudState {
   email: string | null
   lastSync: number | null
 }
 
-interface TokenResponse {
-  access_token?: string
-  expires_in?: number
-  error?: string
-}
-
-interface TokenClient {
-  requestAccessToken(options?: { prompt?: string }): void
-}
-
-interface GoogleOAuth {
-  initTokenClient(config: {
-    client_id: string
-    scope: string
-    callback: (response: TokenResponse) => void
-    error_callback?: () => void
-  }): TokenClient
-  revoke(token: string, done?: () => void): void
-}
-
-const oauth = (): GoogleOAuth | undefined =>
-  (window as unknown as { google?: { accounts?: { oauth2?: GoogleOAuth } } }).google?.accounts?.oauth2
-
 let token: { value: string; expiresAt: number } | null = null
-let scriptPromise: Promise<void> | null = null
+/** What came back from Google's page when the app opened, until the sync window shows it. */
+let signInResult: { ok: true } | { ok: false; error: string } | null = null
 const listeners = new Set<() => void>()
 
 export const cloudConfigured = () => GOOGLE_CLIENT_ID !== ''
@@ -78,53 +63,80 @@ export function useCloudState(): CloudState {
   return state
 }
 
-/** Loads Google's sign-in script ahead of time, so the sign-in window can open straight from a tap. */
-export function prepareCloud(): Promise<void> {
-  if (!cloudConfigured()) return Promise.resolve()
-  if (oauth()) return Promise.resolve()
-  if (!scriptPromise) {
-    scriptPromise = new Promise((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = 'https://accounts.google.com/gsi/client'
-      script.async = true
-      script.onload = () => resolve()
-      script.onerror = () => {
-        scriptPromise = null
-        reject(new Error('Google\'a bağlanılamadı. İnternet bağlantını kontrol et.'))
-      }
-      document.head.append(script)
-    })
-  }
-  return scriptPromise
-}
-
 const hasToken = () => token !== null && token.expiresAt > Date.now() + 60_000
 
-/**
- * Gets an access token. Call it straight from a tap: the first time a Google window asks which
- * account to use and whether the app may keep its data in Drive.
- */
-function requestToken(): Promise<string> {
-  if (hasToken()) return Promise.resolve(token!.value)
-  const google = oauth()
-  if (!google) return Promise.reject(new Error('Google girişi hazırlanıyor, birkaç saniye sonra tekrar dene.'))
-  return new Promise((resolve, reject) => {
-    const client = google.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: SCOPES,
-      callback: (response) => {
-        if (response.error || !response.access_token) {
-          reject(new Error('Google girişi tamamlanmadı.'))
-          return
-        }
-        token = { value: response.access_token, expiresAt: Date.now() + (response.expires_in ?? 3600) * 1000 }
-        resolve(response.access_token)
-      },
-      error_callback: () => reject(new Error('Google penceresi kapatıldı ya da açılamadı.')),
-    })
-    client.requestAccessToken({ prompt: cloudState().email ? '' : 'consent' })
-  })
+/** The address Google sends the user back to (it must be listed in the Google Cloud client). */
+export function returnAddress(): string {
+  return window.location.origin + window.location.pathname.replace(/index\.html$/, '')
 }
+
+function randomState(): string {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** Leaves for Google's sign-in page; Google sends the user back here with a token. */
+function goToGoogle(): void {
+  const state = randomState()
+  try {
+    localStorage.setItem(SIGN_IN_KEY, JSON.stringify({ state, route: window.location.hash }))
+  } catch {
+    // without storage the answer cannot be checked; Google is still opened and the check fails safely
+  }
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: returnAddress(),
+    response_type: 'token',
+    scope: SCOPES,
+    include_granted_scopes: 'true',
+    state,
+  })
+  const email = cloudState().email
+  if (email) params.set('login_hint', email)
+  window.location.assign(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
+}
+
+/**
+ * Called once when the app opens, before anything is drawn: picks up the token Google put in the
+ * address, removes it from the address bar and puts the app back on the page it was on.
+ */
+export function takeSignInResult(): void {
+  const hash = window.location.hash
+  if (!/^#(.*&)?(access_token|error)=/.test(hash)) return
+  const answer = new URLSearchParams(hash.slice(1))
+  let saved: { state?: string; route?: string } | null = null
+  try {
+    saved = JSON.parse(localStorage.getItem(SIGN_IN_KEY) ?? 'null')
+    localStorage.removeItem(SIGN_IN_KEY)
+  } catch {
+    saved = null
+  }
+  const route = saved?.route && !saved.route.includes('access_token') ? saved.route : '#/'
+  window.history.replaceState(null, '', window.location.pathname + window.location.search + route)
+
+  const accessToken = answer.get('access_token')
+  if (!saved?.state || answer.get('state') !== saved.state) {
+    signInResult = { ok: false, error: 'Google girişi tamamlanamadı. Tekrar "Google ile bağlan"a bas.' }
+  } else if (!accessToken) {
+    signInResult = {
+      ok: false,
+      error: answer.get('error') === 'access_denied' ? 'Google girişine izin verilmedi.' : 'Google girişi tamamlanamadı. Tekrar dene.',
+    }
+  } else if (!(answer.get('scope') ?? '').includes('drive.appdata')) {
+    // Google lets the user untick the Drive permission; without it nothing can be saved.
+    signInResult = {
+      ok: false,
+      error: 'Google penceresinde Drive iznini işaretlemedin. Tekrar "Google ile bağlan"a bas ve Drive kutusunu işaretle.',
+    }
+  } else {
+    token = { value: accessToken, expiresAt: Date.now() + Number(answer.get('expires_in') ?? 3600) * 1000 }
+    signInResult = { ok: true }
+  }
+}
+
+/** True once when the app has just come back from Google's page (the sync window should open). */
+export const cameBackFromGoogle = () => signInResult !== null
 
 async function google(url: string, init: RequestInit = {}): Promise<Response> {
   const response = await fetch(url, { ...init, headers: { Authorization: `Bearer ${token?.value ?? ''}`, ...init.headers } })
@@ -181,15 +193,34 @@ async function sync(): Promise<SyncResult> {
   return added
 }
 
-/** From a tap: signs in if needed (remembering the account's address) and syncs. */
-export async function connectAndSync(): Promise<SyncResult> {
-  await requestToken()
+async function rememberAccountAndSync(): Promise<SyncResult> {
   if (!cloudState().email) {
     const response = await google('https://www.googleapis.com/oauth2/v3/userinfo')
     const { email } = (await response.json()) as { email?: string }
     saveState({ email: email ?? 'Google hesabı', lastSync: null })
   }
   return sync()
+}
+
+/**
+ * From the "Eşitle" button: syncs when signed in during this visit; otherwise goes to Google's page
+ * (the app opens again afterwards and `finishSignIn` does the sync) and returns null.
+ */
+export async function connectAndSync(): Promise<SyncResult | null> {
+  if (!hasToken()) {
+    goToGoogle()
+    return null
+  }
+  return rememberAccountAndSync()
+}
+
+/** After coming back from Google's page: syncs, or says why the sign-in did not work. Null if there was no sign-in. */
+export async function finishSignIn(): Promise<SyncResult | null> {
+  const result = signInResult
+  signInResult = null
+  if (!result) return null
+  if (!result.ok) throw new Error(result.error)
+  return rememberAccountAndSync()
 }
 
 /** Syncs in the background when a sign-in from this visit is still valid (for example after a game). */
@@ -202,10 +233,8 @@ export async function syncQuietly(): Promise<SyncResult | null> {
   }
 }
 
-/** Forgets the account on this device (the data in Drive stays). */
+/** Forgets the account on this device (the data in Drive stays, and other devices stay connected). */
 export function disconnect(): void {
-  const google = oauth()
-  if (token && google) google.revoke(token.value)
   token = null
   saveState({ email: null, lastSync: null })
 }

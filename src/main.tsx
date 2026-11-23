@@ -1,11 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import { takeSignInResult } from './core/cloud'
 import { restoreFullscreen } from './core/fullscreen'
 import { listenForInstall } from './core/install'
 import { listenForClicks } from './core/sound'
 import './styles.css'
 
+// Back from Google's sign-in page: take the token out of the address before the pages read it.
+takeSignInResult()
 listenForInstall()
 restoreFullscreen()
 listenForClicks()

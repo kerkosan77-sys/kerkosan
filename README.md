@@ -417,7 +417,7 @@ Bulmaca düğmesinde o gün seni bekleyen bulmaca sayısı görünür.
 Ana ekranın altındaki **☁️ Eşitle** düğmesi oyunlarını, bulmacalarını ve derslerini Google hesabınla eşitler. Kayıtlar senin Google Drive'ında, yalnızca bu uygulamanın görebildiği gizli bir klasörde tek bir dosya olarak durur; başka hiçbir yere gitmez ve Drive'ındaki diğer dosyalarına dokunulmaz.
 
 - **Eşitle:** Önce Drive'daki kayıtlar bu cihaza eklenir, sonra bu cihazın kayıtları Drive'a yazılır. Hiçbir şey silinmez; aynı oyun iki kez eklenmez, bir oyunun hangi cihazdaki analizi daha yeniyse o kalır, bitirilen dersler birleşir.
-- **Otomatik:** Bağlandıktan sonra o açılışta her oyun bitip analiz edilince eşitleme kendiliğinden yapılır. Uygulamayı yeniden açınca bir kez **Eşitle**'ye basman yeter (Google genelde bir şey sormaz).
+- **Otomatik:** Bağlandıktan sonra o açılışta her oyun bitip analiz edilince eşitleme kendiliğinden yapılır. Uygulamayı yeniden açınca bir kez **Eşitle**'ye basman yeter: uygulama Google'ın sayfasına gider ve kendiliğinden geri döner (Google genelde bir şey sormaz).
 - **Bağlantıyı kes:** Bu cihazda hesabı unutur; Drive'daki kayıtlar durur.
 
 Telefondan da kullanabilmek için uygulamanın internette olması gerekir (bilgisayardaki `localhost` adresine telefon ulaşamaz). Bunun için ücretsiz GitHub Pages kullanılır. Kurulum bir kez yapılır:
@@ -432,8 +432,10 @@ Telefondan da kullanabilmek için uygulamanın internette olması gerekir (bilgi
 1. https://console.cloud.google.com adresine Gmail hesabınla gir ve yeni bir proje oluştur (örneğin "Akil Oyunlari").
 2. **APIs & Services → Library** bölümünde **Google Drive API**'yi bul ve **Enable** de.
 3. **Google Auth Platform** (ya da **OAuth consent screen**) bölümünde: uygulama adı "Akıl Oyunları Koçu", destek e-postası olarak kendi adresin, **Audience: External**, yayın durumu **Testing**. **Test users** listesine uygulamayı kullanacağın Gmail adreslerini ekle.
-4. **Clients → Create client → Web application** seç. **Authorized JavaScript origins** kısmına şunları ekle: `https://KULLANICI-ADIN.github.io`, `http://localhost:4173`, `http://localhost:5173`. Oluştur ve **Client ID**'yi kopyala (`….apps.googleusercontent.com` ile biter; gizli değildir).
+4. **Clients → Create client → Web application** seç. **Authorized JavaScript origins** kısmına şunları ekle: `https://KULLANICI-ADIN.github.io`, `http://localhost:4173`, `http://localhost:5173`. **Authorized redirect URIs** kısmına da uygulamanın adreslerini sonlarındaki `/` ile ekle: `https://KULLANICI-ADIN.github.io/akil-oyunlari/`, `http://localhost:4173/`, `http://localhost:5173/` (Google girişten sonra seni bu adreslere geri gönderir). Oluştur ve **Client ID**'yi kopyala (`….apps.googleusercontent.com` ile biter; gizli değildir).
 5. Client ID'yi `src/config.ts` dosyasındaki `GOOGLE_CLIENT_ID` değerine yaz ve kodu tekrar gönder.
+
+Giriş ayrı bir pencerede değil, uygulamanın kendi sayfasında yapılır: **Google ile bağlan**'a basınca Google'ın sayfası açılır, hesabını seçip izin verince uygulamaya geri dönülür ve eşitleme kendiliğinden yapılır. (Ayrı pencereli giriş telefonlarda ve kurulu uygulamada siyah ekranda kalabiliyordu.) Google'ın izin sayfasında Drive için bir kutu çıkarsa işaretle; işaretlenmezse uygulama bunu söyler.
 
 İlk bağlanışta Google "Bu uygulama doğrulanmadı" diyebilir: uygulama senin kendi test uygulaman olduğu için **Devam**'a basman yeterli. Google, uygulamadan yalnızca Drive'daki kendi gizli klasörünü ve e-posta adresini görme izni ister.
 

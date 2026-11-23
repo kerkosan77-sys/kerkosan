@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type ReactNode, type Tou
 import FullscreenButton from '../components/FullscreenButton'
 import SoundButton from '../components/SoundButton'
 import { analyseMissing } from '../core/analysis/background'
-import { cloudConfigured, connectAndSync, disconnect, prepareCloud, syncQuietly, useCloudState, type SyncResult } from '../core/cloud'
+import { cameBackFromGoogle, cloudConfigured, connectAndSync, disconnect, finishSignIn, syncQuietly, useCloudState, type SyncResult } from '../core/cloud'
 import { canPromptInstall, isInstalledApp, onInstallChange, promptInstall } from '../core/install'
 import { duePuzzles } from '../core/puzzles/leitner'
 import { OUTCOME_LABELS, type RecordOutcome } from '../core/records'
@@ -38,7 +38,8 @@ export default function Home() {
   /** Every game's summary, loaded up front so switching games is instant. */
   const [progress, setProgress] = useState<Record<string, Progress>>({})
   const touchStart = useRef<{ x: number; y: number } | null>(null)
-  const [panel, setPanel] = useState<'data' | 'install' | 'cloud' | 'ranks' | null>(null)
+  // Just back from Google's sign-in page: the sync window opens and finishes the sync.
+  const [panel, setPanel] = useState<'data' | 'install' | 'cloud' | 'ranks' | null>(() => (cameBackFromGoogle() ? 'cloud' : null))
   /** Bumped after a backup is loaded so the progress card is read again. */
   const [dataVersion, setDataVersion] = useState(0)
 
@@ -48,8 +49,7 @@ export default function Home() {
     listGames()
       .then((games) => analyseMissing(games, (record) => gameById(record.gameType)))
       .catch(() => undefined)
-    // Google sync: load the sign-in script early, and sync quietly if this visit is already signed in.
-    void prepareCloud().catch(() => undefined)
+    // Google sync: sync quietly if this visit is already signed in.
     void syncQuietly().then((result) => result && (result.games > 0 || result.puzzles > 0) && setDataVersion((v) => v + 1))
   }, [])
 
@@ -567,6 +567,20 @@ function CloudCard({ onSynced }: { onSynced: () => void }) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null)
 
+  // Back from Google's sign-in page: finish the sync (or say why the sign-in did not work).
+  useEffect(() => {
+    if (!cameBackFromGoogle()) return
+    setBusy(true)
+    finishSignIn()
+      .then((result) => {
+        if (!result) return
+        setMessage({ text: syncedText(result) })
+        onSynced()
+      })
+      .catch((error: unknown) => setMessage({ text: error instanceof Error ? error.message : 'Eşitlenemedi.', error: true }))
+      .finally(() => setBusy(false))
+  }, [onSynced])
+
   if (!cloudConfigured()) {
     return (
       <section className="cloud-card">
@@ -580,14 +594,21 @@ function CloudCard({ onSynced }: { onSynced: () => void }) {
   function sync() {
     setBusy(true)
     setMessage(null)
-    // Started straight from the tap, so the Google window is allowed to open.
+    // Not signed in during this visit: the app goes to Google's page and comes back by itself.
     connectAndSync()
       .then((result) => {
+        if (!result) {
+          setMessage({ text: "Google'a gidiliyor…" })
+          return
+        }
         setMessage({ text: syncedText(result) })
         onSynced()
+        setBusy(false)
       })
-      .catch((error: unknown) => setMessage({ text: error instanceof Error ? error.message : 'Eşitlenemedi.', error: true }))
-      .finally(() => setBusy(false))
+      .catch((error: unknown) => {
+        setMessage({ text: error instanceof Error ? error.message : 'Eşitlenemedi.', error: true })
+        setBusy(false)
+      })
   }
 
   return (
@@ -604,7 +625,7 @@ function CloudCard({ onSynced }: { onSynced: () => void }) {
       )}
       <div className="button-row">
         <button type="button" className="btn primary" onClick={sync} disabled={busy}>
-          {busy ? 'Eşitleniyor…' : state.email ? 'Şimdi eşitle' : 'Google ile bağlan'}
+          {busy ? 'Bekle…' : state.email ? 'Şimdi eşitle' : 'Google ile bağlan'}
         </button>
         {state.email && (
           <button
