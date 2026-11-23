@@ -5,7 +5,7 @@ import Toggle from '../components/Toggle'
 import TopBar from '../components/TopBar'
 import { useLiveCoach, type LiveCoach } from '../components/useLiveCoach'
 import { queueAnalysis, watchAnalysis, type AnalysisJob } from '../core/analysis/background'
-import { syncQuietly } from '../core/cloud'
+import { autoSave } from '../core/cloud'
 import { CLASSIFICATION_INFO, isErrorClass } from '../core/classify'
 import { moveSound, sounds } from '../core/sound'
 import { playerSummary } from '../core/stats/player'
@@ -94,18 +94,22 @@ export default function Play({ game }: { game: GameModule }) {
   const [endJob, setEndJob] = useState<AnalysisJob | null>(null)
   /** The points total and level after the finished game, and the level before it. */
   const [endRank, setEndRank] = useState<EndRank | null>(null)
+  /** The finished game (with its analysis) was saved to Google Drive. */
+  const [cloudSaved, setCloudSaved] = useState(false)
 
   // The finished game is analysed in the background; its puzzles are saved by themselves.
   useEffect(() => {
     setEndJob(null)
     setEndRank(null)
+    setCloudSaved(false)
     if (!savedGameId) return
     let alive = true
     const stop = watchAnalysis(savedGameId, (job) => {
       setEndJob(job)
+      if (job.status === 'error') void autoSave()
       if (job.status !== 'done') return
-      // Signed in to Google during this visit: the finished game goes to the other devices too.
-      void syncQuietly()
+      // The finished game and its analysis go to Google Drive by themselves.
+      void autoSave().then((saved) => alive && setCloudSaved(saved))
       listGames(game.id)
         .then((games) => {
           if (!alive) return
@@ -562,7 +566,7 @@ export default function Play({ game }: { game: GameModule }) {
               <h2>{end.title}</h2>
               <p>{end.detail}</p>
               {scoringOpen && game.scoring && <p className="muted small">{game.scoring.help}</p>}
-              {endJob && <EndAnalysisStatus job={endJob} rank={endRank} />}
+              {endJob && <EndAnalysisStatus job={endJob} rank={endRank} cloudSaved={cloudSaved} />}
               {savedGameId && (
                 <button
                   type="button"
@@ -819,7 +823,7 @@ function rankText({ total, rank, previousLevel }: EndRank): string {
 }
 
 /** Progress of the background analysis of the game that just ended, how many puzzles it saved, and the points level. */
-function EndAnalysisStatus({ job, rank }: { job: AnalysisJob; rank: EndRank | null }) {
+function EndAnalysisStatus({ job, rank, cloudSaved }: { job: AnalysisJob; rank: EndRank | null; cloudSaved: boolean }) {
   if (job.status === 'error') return <p className="end-analysis error">Analiz yapılamadı: {job.error}</p>
   if (job.status === 'done') {
     const n = job.newPuzzles ?? 0
@@ -830,6 +834,7 @@ function EndAnalysisStatus({ job, rank }: { job: AnalysisJob; rank: EndRank | nu
           {n > 0 ? `Hatalarından ${n} yeni bulmaca kaydedildi.` : 'Bu oyundan yeni bulmaca çıkmadı: büyük bir hata yapmadın.'}
         </p>
         {rank && <p className={`end-rank${rank.rank.level > rank.previousLevel ? ' level-up' : ''}`}>{rankText(rank)}</p>}
+        {cloudSaved && <p className="end-cloud">☁️ Google Drive'a kaydedildi.</p>}
       </div>
     )
   }

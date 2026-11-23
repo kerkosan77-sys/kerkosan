@@ -417,7 +417,8 @@ Bulmaca düğmesinde o gün seni bekleyen bulmaca sayısı görünür.
 Ana ekranın altındaki **☁️ Eşitle** düğmesi oyunlarını, bulmacalarını ve derslerini Google hesabınla eşitler. Kayıtlar senin Google Drive'ında, yalnızca bu uygulamanın görebildiği gizli bir klasörde tek bir dosya olarak durur; başka hiçbir yere gitmez ve Drive'ındaki diğer dosyalarına dokunulmaz.
 
 - **Eşitle:** Önce Drive'daki kayıtlar bu cihaza eklenir, sonra bu cihazın kayıtları Drive'a yazılır. Hiçbir şey silinmez; aynı oyun iki kez eklenmez, bir oyunun hangi cihazdaki analizi daha yeniyse o kalır, bitirilen dersler birleşir.
-- **Otomatik:** Bağlandıktan sonra o açılışta her oyun bitip analiz edilince eşitleme kendiliğinden yapılır. Uygulamayı yeniden açınca bir kez **Eşitle**'ye basman yeter: uygulama Google'ın sayfasına gider ve kendiliğinden geri döner (Google genelde bir şey sormaz).
+- **Otomatik kayıt:** Bir kez bağlandıktan sonra her oyun (analiziyle birlikte), her bulmaca ve her ders bitince kayıtlar birkaç saniye içinde kendiliğinden Drive'a yazılır; arka arkaya çözülen bulmacalar tek seferde kaydedilir. Oyun bitti ekranında "☁️ Google Drive'a kaydedildi" yazar.
+- **Uygulama açılınca:** Diğer cihazlarda kaydedilenler kendiliğinden gelir. Google bağlantısı yaklaşık bir saat geçerlidir; süresi dolmuşsa uygulama açılırken bir anlığına Google'ın sayfasına uğrar, hiçbir şey sormadan yeni bağlantıyı alıp geri döner. Google bunu kendisi yapamazsa (örneğin Google hesabından çıkış yapılmışsa) **☁️ Eşitle** düğmesinde kırmızı **!** çıkar: bir kez **Şimdi eşitle**'ye basman yeter.
 - **Bağlantıyı kes:** Bu cihazda hesabı unutur; Drive'daki kayıtlar durur.
 
 Telefondan da kullanabilmek için uygulamanın internette olması gerekir (bilgisayardaki `localhost` adresine telefon ulaşamaz). Bunun için ücretsiz GitHub Pages kullanılır. Kurulum bir kez yapılır:

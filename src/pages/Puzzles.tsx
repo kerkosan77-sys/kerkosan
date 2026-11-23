@@ -7,6 +7,7 @@ import { moveSound, sounds } from '../core/sound'
 import { BOX_INTERVAL_DAYS, boxCounts, duePuzzles, nextDueAt, relativeDay, schedule } from '../core/puzzles/leitner'
 import { formatDate, opponentName } from '../core/records'
 import { PHASE_LABELS, type BoardMark, type GameModule, type GamePhase } from '../core/types'
+import { autoSave } from '../core/cloud'
 import { addAttempt, getGame, listPuzzles, savePuzzle } from '../db/db'
 import type { AttemptResult, GameRecord, PuzzleRecord } from '../db/types'
 
@@ -212,6 +213,8 @@ function PuzzleSolver({ game, puzzle, number, total, isLast, onReviewed, onNext 
     setNextReview(next.dueAt)
     await savePuzzle(updated)
     await addAttempt({ gameType: game.id, puzzleId: puzzle.id, at: now, result })
+    // Saved to Google Drive a moment later (a run of puzzles goes together).
+    void autoSave()
     onReviewed(updated, result)
   }
 

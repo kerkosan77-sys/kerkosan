@@ -2,7 +2,19 @@ import { useEffect, useRef, useState, type ChangeEvent, type ReactNode, type Tou
 import FullscreenButton from '../components/FullscreenButton'
 import SoundButton from '../components/SoundButton'
 import { analyseMissing } from '../core/analysis/background'
-import { cameBackFromGoogle, cloudConfigured, connectAndSync, disconnect, finishSignIn, syncQuietly, useCloudState, type SyncResult } from '../core/cloud'
+import {
+  cameBackFromGoogle,
+  cameBackQuietly,
+  cloudConfigured,
+  connectAndSync,
+  disconnect,
+  finishSignIn,
+  needsTap,
+  signInQuietlyIfNeeded,
+  syncQuietly,
+  useCloudState,
+  type SyncResult,
+} from '../core/cloud'
 import { canPromptInstall, isInstalledApp, onInstallChange, promptInstall } from '../core/install'
 import { duePuzzles } from '../core/puzzles/leitner'
 import { OUTCOME_LABELS, type RecordOutcome } from '../core/records'
@@ -49,8 +61,11 @@ export default function Home() {
     listGames()
       .then((games) => analyseMissing(games, (record) => gameById(record.gameType)))
       .catch(() => undefined)
-    // Google sync: sync quietly if this visit is already signed in.
-    void syncQuietly().then((result) => result && (result.games > 0 || result.puzzles > 0) && setDataVersion((v) => v + 1))
+    // Google sync: bring in what the other devices saved. Back from a quiet sign-in, finish it; with a
+    // valid token, just sync; connected but without one, renew it at Google's page without asking anything.
+    const refresh = (result: SyncResult | null) => result && (result.games > 0 || result.puzzles > 0) && setDataVersion((v) => v + 1)
+    if (cameBackQuietly()) void finishSignIn().then(refresh).catch(() => undefined)
+    else if (!cameBackFromGoogle() && !signInQuietlyIfNeeded()) void syncQuietly().then(refresh)
   }, [])
 
   useEffect(() => {
@@ -208,6 +223,7 @@ export default function Home() {
       <footer className="home-footer">
         <button type="button" className="btn subtle footer-btn" onClick={() => setPanel('cloud')}>
           ☁️ Eşitle
+          {needsTap() && <span className="cloud-alert" title="Otomatik kayıt için bir kez dokun">!</span>}
         </button>
         <button type="button" className="btn subtle footer-btn" onClick={() => setPanel('data')}>
           💾 Verilerin
@@ -620,8 +636,17 @@ function CloudCard({ onSynced }: { onSynced: () => void }) {
       {state.email && (
         <p className="small">
           Bağlı hesap: <strong>{state.email}</strong>
-          {state.lastSync !== null && <> · Son eşitleme: {sinceText(state.lastSync)}</>}
+          {state.lastSync !== null && <> · Son kayıt: {sinceText(state.lastSync)}</>}
         </p>
+      )}
+      {state.email && (
+        <p className="small ok-text">
+          ✓ Otomatik kayıt açık: her oyundan, bulmacadan ve dersten sonra kendiliğinden kaydedilir; uygulama açılınca diğer
+          cihazların kayıtları gelir.
+        </p>
+      )}
+      {needsTap() && (
+        <p className="small error-text">Google bağlantısı yenilenemedi. Otomatik kaydın sürmesi için bir kez "Şimdi eşitle"ye bas.</p>
       )}
       <div className="button-row">
         <button type="button" className="btn primary" onClick={sync} disabled={busy}>

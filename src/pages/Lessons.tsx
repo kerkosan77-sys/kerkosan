@@ -3,6 +3,7 @@ import TopBar from '../components/TopBar'
 import { LEVEL_TITLES, levelOf, stepPosition, type Lesson } from '../core/lessons'
 import type { BoardMark, GameModule } from '../core/types'
 import { moveSound, sounds } from '../core/sound'
+import { autoSave } from '../core/cloud'
 import { loadLessonProgress, markLessonDone } from '../db/db'
 import { navigate } from '../router'
 
@@ -29,7 +30,10 @@ export default function Lessons({ game, lessonId }: { game: GameModule; lessonId
         lesson={lesson}
         number={index + 1}
         next={lessons[index + 1] ?? null}
-        onComplete={async () => setDone(await markLessonDone(game.id, lesson.id))}
+        onComplete={async () => {
+          setDone(await markLessonDone(game.id, lesson.id))
+          void autoSave()
+        }}
       />
     )
   }
