@@ -158,7 +158,7 @@ function LessonPlayer({
     if (!played) return false
     setPosition(played.position)
     setLastMove(move)
-    moveSound(played.label)
+    moveSound(game.id, played.label)
     if (step.answers.includes(move)) {
       setStatus('solved')
       window.setTimeout(sounds.good, 180)

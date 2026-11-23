@@ -2,22 +2,22 @@ import type { GameId, Level } from '../types'
 
 /**
  * Points levels: a game's running points total is shown as one of its 8 levels (Çok kolay … Usta),
- * so the points always say how far the user has come. Each move earns or costs points, so a game
- * with more moves per game moves the total faster and gets wider ranges.
+ * so the points always say how far the user has come. Winning and losing count most; the moves add
+ * a little, so games with more moves per game get somewhat wider ranges.
  */
 
 /** Where each level starts, level 1 first. About how many of the user's moves one game has is in the note. */
 export const RANK_START: Record<GameId, number[]> = {
   // about 20 moves per game
-  mangala: [0, 50, 125, 250, 425, 650, 950, 1300],
+  mangala: [0, 125, 325, 600, 1000, 1500, 2150, 2950],
   // about 30
-  reversi: [0, 75, 200, 375, 650, 1000, 1400, 1950],
+  reversi: [0, 125, 350, 675, 1125, 1700, 2425, 3325],
   // about 40
-  chess: [0, 100, 250, 500, 850, 1300, 1900, 2600],
+  chess: [0, 150, 400, 750, 1250, 1900, 2700, 3700],
   // about 50
-  dama: [0, 125, 300, 650, 1050, 1650, 2400, 3250],
+  dama: [0, 175, 450, 850, 1450, 2200, 3100, 4250],
   // about 50 on the 9x9 board, counting the moves that close the borders at the end
-  go: [0, 125, 300, 650, 1050, 1650, 2400, 3250],
+  go: [0, 175, 450, 850, 1450, 2200, 3100, 4250],
 }
 
 export interface RankStep {

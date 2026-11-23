@@ -3,16 +3,18 @@ import type { Classification } from '../classify'
 import { outcomeFor } from '../records'
 
 /**
- * Points: right moves earn points, wrong ones cost points, and so do won and lost games. They are
- * worked out again from the saved games every time (nothing extra is stored), so a re-analysis or
- * a restored backup always gives the same total.
+ * Points: winning and losing count most; among the moves only the best and the special ones earn
+ * points, while errors cost points. Ordinary good moves (✓, ✓✓) earn nothing, so playing out an
+ * easy ending move after move does not pile up points. Points are worked out again from the saved
+ * games every time (nothing extra is stored), so a re-analysis or a restored backup always gives
+ * the same total, and a change here applies to the old games too.
  */
 
 export const MOVE_POINTS: Record<Classification, number> = {
   brilliant: 5,
   great: 3,
-  best: 2,
-  excellent: 1,
+  best: 1,
+  excellent: 0,
   good: 0,
   forced: 0,
   inaccuracy: -1,
@@ -20,12 +22,15 @@ export const MOVE_POINTS: Record<Classification, number> = {
   blunder: -5,
 }
 
+/** Per bot level: a win earns WIN × level, a draw DRAW × level, a loss costs LOSS × (9 − level). */
+export const RESULT_POINTS = { win: 10, draw: 4, loss: 6 } as const
+
 /** Beating a strong bot is worth more; losing to a weak one costs more. Levels run 1-8. */
 export function resultPoints(outcome: ReturnType<typeof outcomeFor>, level: number | null): number {
   if (level === null) return 0
-  if (outcome === 'win') return 5 * level
-  if (outcome === 'draw') return 2 * level
-  if (outcome === 'loss') return -3 * (9 - level)
+  if (outcome === 'win') return RESULT_POINTS.win * level
+  if (outcome === 'draw') return RESULT_POINTS.draw * level
+  if (outcome === 'loss') return -RESULT_POINTS.loss * (9 - level)
   return 0
 }
 

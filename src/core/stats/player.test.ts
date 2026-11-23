@@ -88,7 +88,7 @@ describe('player summary', () => {
       ['other', 1],
     ])
     expect(summary.recent[0]).toMatchObject({ outcome: 'loss', level: 3, errors: 3 })
-    // The moves are worth -7 and the loss against level 3 -18: the total stays at zero.
+    // The moves cost points and the loss against level 3 costs 36: the total stays at zero.
     expect(summary.recent[0].points).toBe(0)
     expect(summary.points).toBe(0)
     expect(summary.errorRate).toBeCloseTo((3 / 11) * 10, 5)

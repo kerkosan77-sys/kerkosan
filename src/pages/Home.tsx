@@ -19,7 +19,7 @@ import { canPromptInstall, isInstalledApp, onInstallChange, promptInstall } from
 import { duePuzzles } from '../core/puzzles/leitner'
 import { OUTCOME_LABELS, type RecordOutcome } from '../core/records'
 import { playerSummary, type PlayerSummary } from '../core/stats/player'
-import { MOVE_POINTS, signed } from '../core/stats/points'
+import { MOVE_POINTS, RESULT_POINTS, signed } from '../core/stats/points'
 import { pointsRank, rangeText, rankLadder } from '../core/stats/rank'
 import { CLASSIFICATION_INFO, type Classification } from '../core/classify'
 import { setGameTheme } from '../core/theme'
@@ -704,9 +704,10 @@ function RankCard({ game, points }: { game: GameModule; points: number }) {
       <h3>Puan nasıl kazanılır?</h3>
       <p className="muted small">
         Her hamlen analiz edilir:{' '}
-        {POINT_MOVES.map((c) => `${CLASSIFICATION_INFO[c].label} ${signed(MOVE_POINTS[c])}`).join(', ')}. Bilgisayarı yenmek 5 × bot
-        seviyesi kadar puan getirir, kaybetmek 3 × (9 − bot seviyesi) kadar götürür: güçlü bota kazanmak daha değerli, zayıf
-        bota kaybetmek daha pahalı. Aralıklar oyunun hamle sayısına göre ayarlı: bir oyunda çok hamle yapılan oyunlarda aralıklar daha geniş.
+        {POINT_MOVES.map((c) => `${CLASSIFICATION_INFO[c].label} ${signed(MOVE_POINTS[c])}`).join(', ')}; İyi ve Çok iyi hamleler 0. Asıl
+        puan sonuçtan gelir: bilgisayarı yenmek {RESULT_POINTS.win} × bot seviyesi kadar puan getirir, berabere {RESULT_POINTS.draw} × bot
+        seviyesi, kaybetmek {RESULT_POINTS.loss} × (9 − bot seviyesi) kadar götürür: güçlü bota kazanmak daha değerli, zayıf bota
+        kaybetmek daha pahalı. Hamlesi çok olan oyunlarda aralıklar biraz daha geniş.
       </p>
     </section>
   )

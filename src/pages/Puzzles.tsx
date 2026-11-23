@@ -268,7 +268,7 @@ function PuzzleSolver({ game, puzzle, number, total, isLast, onReviewed, onNext 
     setError(null)
     setPosition(played.position)
     setLastMove(move)
-    moveSound(played.label)
+    moveSound(game.id, played.label)
     setStatus('checking')
     void judge(move, attempt)
     return true

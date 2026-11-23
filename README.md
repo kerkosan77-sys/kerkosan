@@ -358,35 +358,34 @@ Ana ekran her pencere boyutunda (telefon dahil) tek ekrana sığar, aşağı yuk
 
 ## Puanlar
 
-Doğru hamleler puan getirir, yanlışlar götürür; kazanılan ve kaybedilen oyunlar da öyle. Puan her oyun için ayrıdır, sıfırın altına düşmez ve kayıtlı oyunlardan her seferinde yeniden hesaplanır (yedekten geri yüklenince de aynı çıkar).
+Asıl puan oyunu kazanmaktan ya da kaybetmekten gelir. Hamlelerden yalnızca en iyi ve özel hamleler puan getirir, hatalar puan götürür; sıradan iyi hamleler (✓, ✓✓) puan getirmez, böylece kolay bir oyun sonunu uzatarak puan toplanamaz. Puan her oyun için ayrıdır, sıfırın altına düşmez ve kayıtlı oyunlardan her seferinde yeniden hesaplanır (yedekten geri yüklenince de aynı çıkar).
 
 | Hamle | Puan |
 | --- | --- |
 | !! Parlak | +5 |
 | ! Harika | +3 |
-| ★ En iyi | +2 |
-| ✓✓ Çok iyi | +1 |
-| ✓ İyi, □ Zorunlu | 0 |
+| ★ En iyi | +1 |
+| ✓✓ Çok iyi, ✓ İyi, □ Zorunlu | 0 |
 | ?! Yanlışlık | −1 |
 | ? Hata | −3 |
 | ?? Büyük hata | −5 |
 
-Bilgisayara karşı sonuç: kazanmak **seviye × 5**, berabere **seviye × 2**, kaybetmek **−(9 − seviye) × 3** puan. Güçlü bota kaybetmek az, zayıf bota kaybetmek çok götürür; güçlü botu yenmek çok getirir. Dışarıdan eklenen oyunlarda yalnızca hamle puanı sayılır. Hamle puanı oyun analiz edilince eklenir.
+Bilgisayara karşı sonuç: kazanmak **seviye × 10**, berabere **seviye × 4**, kaybetmek **−(9 − seviye) × 6** puan. Güçlü bota kaybetmek az, zayıf bota kaybetmek çok götürür; güçlü botu yenmek çok getirir. Dışarıdan eklenen oyunlarda yalnızca hamle puanı sayılır. Hamle puanı oyun analiz edilince eklenir.
 
 ### Puan düzeyleri
 
-Her oyunun toplam puanı, botların 8 düzeyinden birine denk gelir: puanın arttıkça düzeyin yükselir. Bir oyunda ne kadar çok hamle yapılıyorsa bir oyundan o kadar çok puan gelir, bu yüzden hamlesi çok olan oyunlarda aralıklar daha geniştir. Ana ekrandaki **Puan düzeyin** kutusu düzeyini ve bir sonrakine kalan puanı gösterir; kutuya ya da ⭐ puana dokununca bütün düzeyler aralıklarıyla açılır. Oyun bitince bir üst düzeye çıktıysan bunu oyun ekranı söyler.
+Her oyunun toplam puanı, botların 8 düzeyinden birine denk gelir: puanın arttıkça düzeyin yükselir. Puan çoğunlukla kazanılan oyunlardan gelir; hamleler biraz ekler, bu yüzden hamlesi çok olan oyunlarda aralıklar biraz daha geniştir. Ana ekrandaki **Puan düzeyin** kutusu düzeyini ve bir sonrakine kalan puanı gösterir; kutuya ya da ⭐ puana dokununca bütün düzeyler aralıklarıyla açılır. Oyun bitince bir üst düzeye çıktıysan bunu oyun ekranı söyler.
 
 | Düzey | Mangala | Reversi | Satranç | Dama, Go |
 | --- | --- | --- | --- | --- |
-| 1. Çok kolay | 0–49 | 0–74 | 0–99 | 0–124 |
-| 2. Kolay | 50–124 | 75–199 | 100–249 | 125–299 |
-| 3. Kolay+ | 125–249 | 200–374 | 250–499 | 300–649 |
-| 4. Orta | 250–424 | 375–649 | 500–849 | 650–1.049 |
-| 5. Orta+ | 425–649 | 650–999 | 850–1.299 | 1.050–1.649 |
-| 6. Zor | 650–949 | 1.000–1.399 | 1.300–1.899 | 1.650–2.399 |
-| 7. Çok zor | 950–1.299 | 1.400–1.949 | 1.900–2.599 | 2.400–3.249 |
-| 8. Usta | 1.300+ | 1.950+ | 2.600+ | 3.250+ |
+| 1. Çok kolay | 0–124 | 0–124 | 0–149 | 0–174 |
+| 2. Kolay | 125–324 | 125–349 | 150–399 | 175–449 |
+| 3. Kolay+ | 325–599 | 350–674 | 400–749 | 450–849 |
+| 4. Orta | 600–999 | 675–1.124 | 750–1.249 | 850–1.449 |
+| 5. Orta+ | 1.000–1.499 | 1.125–1.699 | 1.250–1.899 | 1.450–2.199 |
+| 6. Zor | 1.500–2.149 | 1.700–2.424 | 1.900–2.699 | 2.200–3.099 |
+| 7. Çok zor | 2.150–2.949 | 2.425–3.324 | 2.700–3.699 | 3.100–4.249 |
+| 8. Usta | 2.950+ | 3.325+ | 3.700+ | 4.250+ |
 
 Puan düzeyi ne kadar yol aldığını gösterir. **Sana uygun bot** ise son sonuçlarına bakar (aynı seviyede 3 oyunun 2'sini kazanınca bir üst seviye önerilir), yani hangi botla oynaman gerektiğini söyler.
 

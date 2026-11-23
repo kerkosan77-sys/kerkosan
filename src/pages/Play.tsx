@@ -294,7 +294,7 @@ export default function Play({ game }: { game: GameModule }) {
     if (next === null) return false
     stateRef.current = next
     const played = game.history(next)
-    moveSound(played[played.length - 1]?.label)
+    moveSound(game.id, played[played.length - 1]?.label)
     setVersion((v) => v + 1)
     const ending = game.end(next, userSideRef.current)
     if (ending) void finish(ending)
