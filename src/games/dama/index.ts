@@ -157,7 +157,7 @@ export const damaModule: GameModule<DamaState> = {
   sideLabels: COLOR_NAMES,
   sideChoiceTitle: 'Hangi renkle oynamak istersin?',
   sideChoices: [
-    { value: 'w', label: 'Beyaz (ilk sen başla)' },
+    { value: 'w', label: 'Beyaz' },
     { value: 'b', label: 'Siyah' },
     { value: 'random', label: 'Rastgele' },
   ],
@@ -182,7 +182,7 @@ export const damaModule: GameModule<DamaState> = {
   computerDelayMs: 500,
   warningLabel: {
     title: 'Taş kaptırma uyarısı',
-    description: 'Rakibine taş kazandıracak ya da dama yaptıracak bir hamle yaparsan seni uyarır ve hamleni geri almanı sağlar.',
+    description: 'Rakibine taş kazandıracak ya da dama yaptıracak bir hamle yaparsan hamlenin altında seni uyarır; istersen Geri al ile hamleni geri alırsın.',
   },
   rules: { title: 'Dama nasıl oynanır?', items: RULES },
 

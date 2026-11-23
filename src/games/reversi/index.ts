@@ -135,7 +135,7 @@ export const reversiModule: GameModule<ReversiState> = {
   sideColors: { w: 'b', b: 'w' },
   sideChoiceTitle: 'Hangi renkle oynamak istersin?',
   sideChoices: [
-    { value: 'w', label: 'Siyah (ilk sen başla)' },
+    { value: 'w', label: 'Siyah' },
     { value: 'b', label: 'Beyaz' },
     { value: 'random', label: 'Rastgele' },
   ],
@@ -159,7 +159,7 @@ export const reversiModule: GameModule<ReversiState> = {
   computerDelayMs: 500,
   warningLabel: {
     title: 'Köşe uyarısı',
-    description: 'Rakibine köşe açacak bir hamle yaparsan seni uyarır ve hamleni geri almanı sağlar.',
+    description: 'Rakibine köşe açacak bir hamle yaparsan hamlenin altında seni uyarır; istersen Geri al ile hamleni geri alırsın.',
   },
   rules: { title: 'Reversi nasıl oynanır?', items: RULES },
 

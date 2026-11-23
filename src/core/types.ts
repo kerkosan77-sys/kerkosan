@@ -198,7 +198,18 @@ export interface GameModule<S = unknown> {
   /** Minimum time before the computer's move appears (lets move animations finish). */
   computerDelayMs: number
 
-  newState(): S
+  /** A fresh game; `boardSize` for games with a choice of boards (Go). */
+  newState(options?: { boardSize?: number }): S
+  /**
+   * Whether the engine can judge the moves of a game in this position (Go: only on the 9×9 board).
+   * Without it a game is played and saved with its result points, but its moves are not analysed,
+   * no advantage bar is shown and no puzzles are made from it. Missing means always.
+   */
+  canAnalyse?(position: string): boolean
+  /** Shown instead of the analysis for games the engine cannot judge. */
+  noAnalysisNote?: string
+  /** Board sizes to choose from (Go), the first one is the default. */
+  boardSizes?: { value: number; label: string; note: string }[]
   stateFromRecord(record: string): S
   stateToRecord(state: S, meta?: RecordMeta): string
   position(state: S): string
@@ -241,6 +252,8 @@ export interface GameModule<S = unknown> {
 
   /** Boards much wider than tall (Mangala): the board gets the full page width, the panel goes below. */
   wideBoard?: boolean
+  /** How many stones a move puts down one by one (Mangala sowing), so its sound clicks once per stone. */
+  stonesPlaced?(position: string, move: string): number
   /** Colours of the players' dots when they differ from the side ids (in Go the first player is black). */
   sideColors?: Record<Side, 'w' | 'b'>
   /** Short rules for beginners, shown before a game. */

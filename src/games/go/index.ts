@@ -120,6 +120,7 @@ const RULES = [
   'Bir grubun bütün nefeslerini kapatırsan o taşları yakalayıp tahtadan alırsın. Tek nefesi kalan gruba "atari" denir.',
   'Taşını nefessiz bırakacağın bir yere oynayamazsın (rakibi yakalamıyorsan). Az önce tek taş yakalayan taşı hemen geri yakalamak da yasaktır (ko); önce başka bir yere oyna.',
   'Amaç daha çok alan çevirmek. Oyun bitince tahtadaki taşların ve çevirdiğin boş noktalar sayılır. Beyaz ikinci başladığı için 7,5 ekstra alan (komi) alır.',
+  'Tahta 9×9, 13×13 ya da 19×19 olabilir; kurallar hepsinde aynı. Öğrenirken 9×9 ile başla.',
   'Oynayacak işe yarar yer kalmayınca "Pas geç"e bas. İki oyuncu üst üste pas geçince oyun biter ve alanlar sayılır.',
 ]
 
@@ -133,7 +134,7 @@ export const goModule: GameModule<GoState> = {
   sideColors: { w: 'b', b: 'w' },
   sideChoiceTitle: 'Hangi renkle oynamak istersin?',
   sideChoices: [
-    { value: 'w', label: 'Siyah (ilk sen başla)' },
+    { value: 'w', label: 'Siyah' },
     { value: 'b', label: 'Beyaz' },
     { value: 'random', label: 'Rastgele' },
   ],
@@ -161,11 +162,27 @@ export const goModule: GameModule<GoState> = {
   warningLabel: {
     title: 'Taş kaptırma uyarısı',
     description:
-      'Taşlarını atariye sokan ya da atarideki taşlarını kurtarmayan bir hamle yaparsan, ya da erken pas geçersen seni uyarır ve hamleni geri almanı sağlar.',
+      'Taşlarını atariye sokan ya da atarideki taşlarını kurtarmayan bir hamle yaparsan, ya da erken pas geçersen hamlenin altında seni uyarır; istersen Geri al ile hamleni geri alırsın.',
   },
   rules: { title: 'Go nasıl oynanır?', items: RULES },
 
-  newState,
+  newState: (options) => newState(options?.boardSize),
+  canAnalyse: (position) => decode(position).size === 9,
+  noAnalysisNote:
+    'Bu oyun büyük tahtada oynandı. Hamle analizi yalnızca 9×9 oyunlarda yapılıyor: bilgisayarın hesabı 13×13 ve 19×19 tahtalarda hamleleri doğru değerlendirecek kadar güçlü değil. Oyunun sonucu ve puanı kayıtlı.',
+  boardSizes: [
+    { value: 9, label: '9×9', note: 'Küçük tahta: oyunlar kısa sürer. Hamle analizi, üstünlük çubuğu ve bulmacalar yalnızca bu tahtada var.' },
+    {
+      value: 13,
+      label: '13×13',
+      note: 'Orta tahta: bir oyun 9×9\'un yaklaşık iki katı sürer. Koçun notu ve taş kaptırma uyarısı var; hamle analizi yok (yalnızca sonuç puanı).',
+    },
+    {
+      value: 19,
+      label: '19×19',
+      note: 'Tam tahta: gerçek Go, oyunlar uzun sürer ve bilgisayar burada daha zayıf oynar. Koçun notu ve taş kaptırma uyarısı var; hamle analizi yok (yalnızca sonuç puanı).',
+    },
+  ],
   stateFromRecord: (record) => replay(record).state,
   stateToRecord: recordText,
   position: (state) => encode(state.position),

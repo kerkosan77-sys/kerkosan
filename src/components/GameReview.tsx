@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import EvalBar from './EvalBar'
 import MoveList, { type MoveItem } from './MoveList'
 import TopBar from './TopBar'
+import { analysable } from '../core/analysable'
 import { analysisVersion } from '../core/analysis/analyzeGame'
 import { queueAnalysis, watchAnalysis } from '../core/analysis/background'
 import { sortedErrorTypes } from '../core/analysis/summary'
@@ -48,6 +49,8 @@ export default function GameReview({ game: module, gameId, initialPly }: GameRev
       }
       setRecord(found)
       if (found.analysis?.version === analysisVersion(module)) return
+      // Boards the engine cannot judge: nothing to wait for.
+      if (!analysable(module, found.record)) return
 
       // The analysis runs in the background and saves itself (and its puzzles) even if this page is left.
       setProgress({ done: 0, total: 0 })
@@ -119,6 +122,27 @@ export default function GameReview({ game: module, gameId, initialPly }: GameRev
         <section className="card">
           <h2>Oyun bulunamadı</h2>
           <p className="muted">Bu oyun kayıtlı değil. Oyunlar listesine dönüp başka bir oyun seçebilirsin.</p>
+        </section>
+      </div>
+    )
+  }
+
+  if (!analysis && !analysable(module, record.record)) {
+    const points = gamePoints(record).total
+    return (
+      <div className="page">
+        {topBar}
+        <section className="card analysis-progress">
+          <h2>
+            {record.names.w} – {record.names.b}
+          </h2>
+          <p>{module.noAnalysisNote ?? 'Bu oyunun hamleleri analiz edilmiyor.'}</p>
+          <p className="muted small">
+            Sonuç: {OUTCOME_LABELS[outcomeFor(record.result, record.userSide)]} · {signed(points)} puan
+          </p>
+          <a className="btn" href={`#/${module.slug}/analiz`}>
+            Oyunlara dön
+          </a>
         </section>
       </div>
     )

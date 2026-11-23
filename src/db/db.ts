@@ -226,10 +226,16 @@ const lessonList = (value: unknown): string[] =>
 // ---------- backup ----------
 
 /** Everything stored on this device, for the "Yedekle" button. */
+/**
+ * Rows that belong to one device and never travel in a backup: the unfinished game. If it did, a game
+ * finished or deleted here would come back from the Drive copy at the next sync, again and again.
+ */
+const deviceOnly = (key: string) => key.startsWith('currentGame:')
+
 export async function exportBackup(): Promise<Backup> {
   const db = await getDB()
   const [games, puzzles, attempts, kv] = await Promise.all([db.getAll('games'), db.getAll('puzzles'), db.getAll('attempts'), db.getAll('kv')])
-  return { app: BACKUP_APP, dbVersion: DB_VERSION, exportedAt: Date.now(), games, puzzles, attempts, kv }
+  return { app: BACKUP_APP, dbVersion: DB_VERSION, exportedAt: Date.now(), games, puzzles, attempts, kv: kv.filter((row) => !deviceOnly(row.key)) }
 }
 
 /** Reads a backup file's text; throws an Error with a message for the user. */
@@ -268,6 +274,8 @@ export async function importBackup(backup: Backup): Promise<{ games: number; puz
   }
   const kvStore = tx.objectStore('kv')
   for (const row of backup.kv) {
+    // Older backups (and the Drive copy) may still hold an unfinished game: it is not brought back.
+    if (deviceOnly(row.key)) continue
     const existing = await kvStore.get(row.key)
     if (!existing) await kvStore.put(row)
     else if (row.key.startsWith('lessons:')) {

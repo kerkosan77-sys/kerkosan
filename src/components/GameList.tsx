@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { analysable } from '../core/analysable'
 import { MODE_LABELS, OUTCOME_LABELS, dotColor, formatDate, opponentName, outcomeFor } from '../core/records'
 import type { GameModule } from '../core/types'
 import { listGames } from '../db/db'
@@ -49,7 +50,11 @@ export default function GameList({ game }: { game: GameModule }) {
                   <div className="game-row-side">
                     <span className={`outcome ${outcome}`}>{OUTCOME_LABELS[outcome]}</span>
                     <small className="muted">
-                      {counts ? `${counts.blunder} büyük hata · ${counts.mistake} hata` : 'Analiz edilmedi'}
+                      {counts
+                        ? `${counts.blunder} büyük hata · ${counts.mistake} hata`
+                        : analysable(game, record.record)
+                          ? 'Analiz edilmedi'
+                          : 'Analiz yok (büyük tahta)'}
                     </small>
                   </div>
                 </a>

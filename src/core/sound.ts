@@ -12,6 +12,10 @@ import type { GameId } from './types'
 const KEY = 'akil-oyunlari-ses'
 let context: AudioContext | null = null
 let master: AudioNode | null = null
+/** Piece sounds go through this, a little quieter than full (the buttons and tones keep their level). */
+let pieces: AudioNode | null = null
+/** How loud the piece sounds are. */
+const PIECE_VOLUME = 0.65
 const listeners = new Set<() => void>()
 
 export function isSoundOn(): boolean {
@@ -55,16 +59,20 @@ function outputOf(c: BaseAudioContext): AudioNode {
   return limiter
 }
 
-function audio(): { c: AudioContext; out: AudioNode } | null {
+function audio(): { c: AudioContext; out: AudioNode; pieces: AudioNode } | null {
   if (!isSoundOn() || typeof window === 'undefined') return null
   if (!context) {
     const Context = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!Context) return null
     context = new Context()
     master = outputOf(context)
+    const volume = context.createGain()
+    volume.gain.value = PIECE_VOLUME
+    volume.connect(master)
+    pieces = volume
   }
   if (context.state === 'suspended') void context.resume()
-  return { c: context, out: master! }
+  return { c: context, out: master!, pieces: pieces! }
 }
 
 const noiseBuffers = new WeakMap<BaseAudioContext, AudioBuffer>()
@@ -130,9 +138,25 @@ function tick(c: BaseAudioContext, out: AudioNode, t: number, freq: number, gain
 }
 
 interface PieceSounds {
-  move(c: BaseAudioContext, out: AudioNode, t: number): void
+  /** `placed`: how many stones the move puts down one by one (Mangala), otherwise 1. */
+  move(c: BaseAudioContext, out: AudioNode, t: number, placed: number): void
   /** `count`: how many pieces were taken or turned over (at least 1). */
-  capture(c: BaseAudioContext, out: AudioNode, t: number, count: number): void
+  capture(c: BaseAudioContext, out: AudioNode, t: number, count: number, placed: number): void
+}
+
+/** Gap between clicks: unhurried for a few stones, quicker for many, so a long move still ends soon. */
+const gapFor = (n: number, slow: number, total: number, fast: number) => (n <= 8 ? slow : Math.max(fast, total / n))
+
+/** Mangala: one pebble click for every stone dropped into a pit. Returns when the last one falls. */
+function sow(c: BaseAudioContext, out: AudioNode, t: number, placed: number): number {
+  const n = Math.min(48, Math.max(1, placed))
+  const gap = gapFor(n, 0.085, 0.75, 0.035)
+  for (let i = 0; i < n; i++) {
+    const at = t + i * gap
+    tick(c, out, at, 2000 + Math.random() * 700, 0.32)
+    thud(c, out, at, 380, 0.05, 0.25)
+  }
+  return t + (n - 1) * gap
 }
 
 const PIECE_SOUNDS: Record<GameId, PieceSounds> = {
@@ -147,7 +171,7 @@ const PIECE_SOUNDS: Record<GameId, PieceSounds> = {
       // The taken piece is knocked aside, then the capturing piece lands.
       thud(c, out, t, 200, 0.07, 0.5)
       hiss(c, out, t, 0.025, 'bandpass', 1900, 0.35)
-      this.move(c, out, t + 0.1)
+      this.move(c, out, t + 0.1, 1)
     },
   },
   // A stone snapped onto a thick wooden board: a sharp, bright clack with a ring of the board.
@@ -159,27 +183,24 @@ const PIECE_SOUNDS: Record<GameId, PieceSounds> = {
       ping(c, out, t, 520, 0.12, 0.14)
     },
     capture(c, out, t, count) {
-      this.move(c, out, t)
+      this.move(c, out, t, 1)
       // The taken stones drop into the lid one after another.
       const drops = Math.min(4, Math.max(2, count))
       for (let i = 0; i < drops; i++) tick(c, out, t + 0.18 + i * 0.07, 1800 + Math.random() * 600, 0.28)
     },
   },
-  // Pebbles dropped one by one into wooden pits: a quick run of small clicks.
+  // Pebbles dropped one by one into wooden pits: a click for every stone.
   mangala: {
-    move(c, out, t) {
-      for (let i = 0; i < 4; i++) {
-        const at = t + i * 0.065 + Math.random() * 0.015
-        tick(c, out, at, 2000 + Math.random() * 700, 0.32)
-        thud(c, out, at, 380, 0.05, 0.25)
-      }
+    move(c, out, t, placed) {
+      sow(c, out, t, placed)
     },
-    capture(c, out, t, count) {
-      this.move(c, out, t)
-      // The won pebbles rattle into the store.
-      const rattle = Math.min(8, Math.max(4, count))
-      for (let i = 0; i < rattle; i++) tick(c, out, t + 0.3 + i * 0.03, 1700 + Math.random() * 900, 0.22)
-      thud(c, out, t + 0.3 + rattle * 0.03, 200, 0.16, 0.6)
+    capture(c, out, t, count, placed) {
+      // Then every won stone is picked up and dropped into the store, one click each.
+      const start = sow(c, out, t, placed) + 0.18
+      const n = Math.min(48, Math.max(1, count))
+      const gap = gapFor(n, 0.07, 0.6, 0.03)
+      for (let i = 0; i < n; i++) tick(c, out, start + i * gap, 1600 + Math.random() * 600, 0.26)
+      thud(c, out, start + (n - 1) * gap + 0.05, 200, 0.16, 0.5)
     },
   },
   // A flat wooden disc slides a little and knocks down.
@@ -196,7 +217,7 @@ const PIECE_SOUNDS: Record<GameId, PieceSounds> = {
         thud(c, out, t + i * 0.11, 260 + i * 25, 0.07, 0.55)
         hiss(c, out, t + i * 0.11, 0.015, 'bandpass', 2200, 0.3)
       }
-      this.move(c, out, t + hops * 0.11)
+      this.move(c, out, t + hops * 0.11, 1)
     },
   },
   // A plastic disc snapped down, and every disc it turns over clicks.
@@ -207,7 +228,7 @@ const PIECE_SOUNDS: Record<GameId, PieceSounds> = {
       thud(c, out, t, 330, 0.07, 0.5)
     },
     capture(c, out, t, count) {
-      this.move(c, out, t)
+      this.move(c, out, t, 1)
       const flips = Math.min(6, Math.max(1, count))
       for (let i = 0; i < flips; i++) tick(c, out, t + 0.11 + i * 0.055, 1700 + i * 70, 0.24, 'triangle')
     },
@@ -215,11 +236,11 @@ const PIECE_SOUNDS: Record<GameId, PieceSounds> = {
 }
 
 /** Draws one piece sound into any audio context (also used to measure the sounds). */
-export function playPieceSound(c: BaseAudioContext, out: AudioNode, game: GameId, capture: boolean, count = 1, delay = 0): void {
+export function playPieceSound(c: BaseAudioContext, out: AudioNode, game: GameId, capture: boolean, count = 1, delay = 0, placed = 1): void {
   const sounds = PIECE_SOUNDS[game]
   const t = c.currentTime + delay
-  if (capture) sounds.capture(c, out, t, count)
-  else sounds.move(c, out, t)
+  if (capture) sounds.capture(c, out, t, count, placed)
+  else sounds.move(c, out, t, placed)
 }
 
 /** A soft tone (for right and wrong). */
@@ -237,13 +258,13 @@ function tone(c: BaseAudioContext, out: AudioNode, freq: number, start: number, 
 const LEAD = 0.01
 
 export const sounds = {
-  move(game: GameId) {
+  move(game: GameId, placed = 1) {
     const a = audio()
-    if (a) playPieceSound(a.c, a.out, game, false, 1, LEAD)
+    if (a) playPieceSound(a.c, a.pieces, game, false, 1, LEAD, placed)
   },
-  capture(game: GameId, count = 1) {
+  capture(game: GameId, count = 1, placed = 1) {
     const a = audio()
-    if (a) playPieceSound(a.c, a.out, game, true, count, LEAD)
+    if (a) playPieceSound(a.c, a.pieces, game, true, count, LEAD, placed)
   },
   click() {
     const a = audio()
@@ -278,10 +299,10 @@ export function capturedCount(label: string): number {
   return Math.max(1, (label.match(/[x×]/g) ?? []).length)
 }
 
-/** Plays the game's own move sound for a move label. */
-export function moveSound(game: GameId, label: string | undefined): void {
-  if (label !== undefined && isCaptureLabel(label)) sounds.capture(game, capturedCount(label))
-  else sounds.move(game)
+/** Plays the game's own move sound for a move label (`placed`: stones put down one by one, in Mangala). */
+export function moveSound(game: GameId, label: string | undefined, placed = 1): void {
+  if (label !== undefined && isCaptureLabel(label)) sounds.capture(game, capturedCount(label), placed)
+  else sounds.move(game, placed)
 }
 
 /** Call once at start-up: a soft tick for every button and button-like link. */

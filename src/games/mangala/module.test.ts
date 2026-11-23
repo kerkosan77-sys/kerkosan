@@ -103,3 +103,15 @@ describe('winning chances', () => {
     expect(mangalaWinPercent({ kind: 'mate', value: -1 })).toBe(0)
   })
 })
+
+describe('mangala move sound', () => {
+  it('clicks once for every stone a move puts down', () => {
+    const start = mangala.history(playAll())[0]?.before ?? encode(mangala.newState().position)
+    // Every pit starts with 4 stones: the move puts down 4, one by one.
+    expect(mangala.stonesPlaced?.(start, '0')).toBe(4)
+    const after = playAll('0')
+    const position = encode(after.position)
+    // The pit just played holds 1 stone again (the first one goes back in): a single stone moves on.
+    expect(mangala.stonesPlaced?.(position, '0')).toBe(1)
+  })
+})

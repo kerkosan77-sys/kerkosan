@@ -6,7 +6,10 @@ import { BLACK, DEFAULT_KOMI, EMPTY, FastBoard, PASS, WHITE, estimateOwnership, 
  * two passes in a row end the game. Black moves first, so black is Side 'w'.
  */
 
+/** The board for lessons and the first choice for games. */
 export const BOARD_SIZE = 9
+/** Boards a game can be played (and imported) on. */
+export const BOARD_SIZES = [9, 13, 19]
 export const COLUMNS = 'ABCDEFGHJKLMNOPQRST'
 export const PASS_MOVE = 'pass'
 

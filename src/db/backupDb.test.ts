@@ -1,7 +1,20 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
-import { addAttempt, addPuzzles, exportBackup, getDB, importBackup, listGames, listPuzzles, readBackup, saveGame } from './db'
-import type { GameRecord, PuzzleRecord } from './types'
+import {
+  addAttempt,
+  addPuzzles,
+  clearSavedPlay,
+  exportBackup,
+  getDB,
+  importBackup,
+  listGames,
+  listPuzzles,
+  loadSavedPlay,
+  readBackup,
+  saveGame,
+  saveSavedPlay,
+} from './db'
+import type { GameRecord, PuzzleRecord, SavedPlay } from './types'
 
 const game = { id: 'g1', gameType: 'mangala', createdAt: 100 } as unknown as GameRecord
 const puzzle = { id: 'g1:4', gameId: 'g1', gameType: 'mangala', createdAt: 100, box: 2, dueAt: 500 } as unknown as PuzzleRecord
@@ -33,6 +46,23 @@ describe('backup round trip', () => {
     await (await getDB()).put('puzzles', { ...puzzle, box: 4, lastReviewedAt: 900 })
     await importBackup(readBackup(file))
     expect((await listPuzzles())[0].box).toBe(4)
+  })
+})
+
+describe('the unfinished game stays on its device', () => {
+  it('is not put in the backup and does not come back after it was finished or deleted here', async () => {
+    await clearAll()
+    const play = { userSide: 'w', level: 3, record: '1. e4', startedAt: 1 } as unknown as SavedPlay
+    // An older backup (like the Drive copy) that still has the unfinished game in it.
+    await saveSavedPlay('chess', play)
+    const old = (await exportBackup()) as unknown as { kv: { key: string }[] }
+    expect(old.kv.some((row) => row.key === 'currentGame:chess')).toBe(false)
+    old.kv.push({ key: 'currentGame:chess', value: play } as unknown as { key: string })
+
+    // The game is finished (or deleted) here, then the next sync reads the old copy.
+    await clearSavedPlay('chess')
+    await importBackup(readBackup(JSON.stringify(old)))
+    expect(await loadSavedPlay('chess')).toBeUndefined()
   })
 })
 

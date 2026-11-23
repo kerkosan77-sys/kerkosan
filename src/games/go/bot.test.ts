@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analyzeGo, chooseGoMove } from './bot'
+import { analyzeGo, chooseGoMove, playoutsFor } from './bot'
 import { makeRng } from './fastboard'
 import { getLevel } from './levels'
 import { decode, encode, hasContestedPoints, initialPosition, legalPoints, indexOf } from './rules'
@@ -53,5 +53,21 @@ describe('analysis of finished positions', () => {
     // After black passes, white sees the same count from its side: passing cost black nothing.
     const after = analyzeGo(`o ${WALLS} - 1 7.5`, { playouts: 2000, multiPV: 1 })
     expect(after.lines[0].score).toEqual({ kind: 'cp', value: -150 })
+  })
+})
+
+describe('thinking on bigger boards', () => {
+  it('plays fewer random games on bigger boards, so the computer answers about as quickly', () => {
+    expect(playoutsFor(10000, 9)).toBe(10000)
+    expect(playoutsFor(10000, 13)).toBe(5000)
+    expect(playoutsFor(10000, 19)).toBe(2000)
+    // Never too few to choose a move.
+    expect(playoutsFor(150, 19)).toBe(100)
+  })
+
+  it('finds a move on a 19×19 board', () => {
+    const position = encode(initialPosition(19))
+    const move = chooseGoMove(position, { id: 1, name: 'test', description: '', playouts: 300 })
+    expect(move).toMatch(/^[A-HJ-T]\d{1,2}$/)
   })
 })

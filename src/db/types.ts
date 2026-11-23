@@ -90,6 +90,8 @@ export interface GameSettings {
   dangerWarning: boolean
   /** Learning mode: each move classified and explained as it is played, and the advantage bar. */
   liveAnalysis: boolean
+  /** Board size for games that offer several (Go); missing means the game's first size. */
+  boardSize?: number
 }
 
 export interface AppSettings {

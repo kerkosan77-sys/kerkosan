@@ -163,10 +163,11 @@ export const mangalaModule: GameModule<MangalaState> = {
   ],
   moveListLayout: 'list',
   wideBoard: true,
+  stonesPlaced: (position, move) => decode(position).pits[Number(move)] || 1,
   computerDelayMs: 1300,
   warningLabel: {
     title: 'Taş kaptırma uyarısı',
-    description: 'Rakibine çok taş kazandıracak bir hamle yaparsan seni uyarır ve hamleni geri almanı sağlar.',
+    description: 'Rakibine çok taş kazandıracak bir hamle yaparsan hamlenin altında seni uyarır; istersen Geri al ile hamleni geri alırsın.',
   },
 
   newState: () => ({ position: initialPosition(), moves: [] }),

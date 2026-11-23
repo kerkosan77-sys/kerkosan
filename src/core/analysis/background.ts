@@ -1,4 +1,5 @@
 import { addPuzzles, getGame, saveGame } from '../../db/db'
+import { analysable } from '../analysable'
 import type { GameRecord } from '../../db/types'
 import { buildPuzzles } from '../puzzles/fromAnalysis'
 import { gamePoints } from '../stats/points'
@@ -13,7 +14,8 @@ import { analysisVersion, analyzeGame } from './analyzeGame'
 
 export interface AnalysisJob {
   gameId: string
-  status: 'waiting' | 'running' | 'done' | 'error'
+  /** 'unsupported': this game's moves are not analysed (see GameModule.canAnalyse); its result points still count. */
+  status: 'waiting' | 'running' | 'done' | 'error' | 'unsupported'
   done: number
   total: number
   error?: string
@@ -75,6 +77,10 @@ async function run(game: GameModule, gameId: string): Promise<GameRecord | null>
     update({ gameId, status: 'error', done: 0, total: 0, error: 'Oyun bulunamadı.' })
     return null
   }
+  if (!analysable(game, found.record)) {
+    update({ gameId, status: 'unsupported', done: 1, total: 1, newPuzzles: 0, points: gamePoints(found).total })
+    return null
+  }
   if (found.analysis?.version === analysisVersion(game)) {
     update({ gameId, status: 'done', done: 1, total: 1, newPuzzles: 0 })
     return found
@@ -112,6 +118,6 @@ export function analyseMissing(games: GameRecord[], moduleOf: (record: GameRecor
   for (const record of games) {
     if (record.analysis) continue
     const module = moduleOf(record)
-    if (module) void queueAnalysis(module, record.id)
+    if (module && analysable(module, record.record)) void queueAnalysis(module, record.id)
   }
 }

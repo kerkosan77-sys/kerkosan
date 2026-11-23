@@ -82,3 +82,51 @@ describe('Go module', () => {
     expect(goWinPercent({ kind: 'mate', value: 1 })).toBe(100)
   })
 })
+
+describe('Go board sizes', () => {
+  it('starts games on 9×9, 13×13 and 19×19, and keeps the size in the saved record', () => {
+    expect(goModule.boardSizes?.map((s) => s.value)).toEqual([9, 13, 19])
+    expect(goModule.newState().position.size).toBe(9)
+    for (const size of [13, 19]) {
+      const state = play(goModule.newState({ boardSize: size }), 'D4', 'K10')
+      expect(state.position.size).toBe(size)
+      // A game left unfinished comes back on the same board.
+      const again = goModule.stateFromRecord(goModule.stateToRecord(state))
+      expect(again.position.size).toBe(size)
+      expect(goModule.history(again)).toHaveLength(2)
+    }
+    // Anything else falls back to the small board.
+    expect(goModule.newState({ boardSize: 7 }).position.size).toBe(9)
+  })
+
+  it('stretches the opening and the endgame with the board', () => {
+    const withStones = (size: number, stones: number) => {
+      const state = goModule.newState({ boardSize: size })
+      const board = new Uint8Array(size * size)
+      // Stones spread out (every other point of every other row), so no area is closed yet.
+      let placed = 0
+      for (let i = 0; i < board.length && placed < stones; i += 2) {
+        if (Math.floor(i / size) % 2 === 0) {
+          board[i] = placed % 2 === 0 ? 1 : 2
+          placed++
+        }
+      }
+      return encode({ ...state.position, board })
+    }
+    expect(goModule.phaseOf!(withStones(9, 14), 0)).toBe('opening')
+    expect(goModule.phaseOf!(withStones(9, 20), 0)).toBe('middlegame')
+    // Twenty stones are still the opening on the big boards.
+    expect(goModule.phaseOf!(withStones(13, 20), 0)).toBe('opening')
+    expect(goModule.phaseOf!(withStones(19, 60), 0)).toBe('opening')
+    expect(goModule.phaseOf!(withStones(19, 100), 0)).toBe('middlegame')
+  })
+})
+
+describe('which Go games are analysed', () => {
+  it('analyses 9×9 games only', () => {
+    expect(goModule.canAnalyse?.(encode(goModule.newState().position))).toBe(true)
+    expect(goModule.canAnalyse?.(encode(goModule.newState({ boardSize: 13 }).position))).toBe(false)
+    expect(goModule.canAnalyse?.(encode(goModule.newState({ boardSize: 19 }).position))).toBe(false)
+    expect(goModule.noAnalysisNote).toContain('9×9')
+  })
+})

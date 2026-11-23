@@ -6,7 +6,7 @@ Kendi oyunlarından öğrenmek için kişisel bir akıl oyunları çalışma uyg
 
 - **Dersler:** Temel bilgileri bir kurs gibi adım adım öğreten kısa dersler: kısa açıklamalar ve tahtada "sıra sende" alıştırmaları.
 
-- **Oyna:** Bilgisayara karşı, 8 zorluk seviyesinde. Koç modu her hamleden önce kısa bir hatırlatma gösterir ve bir şey kaptıracak bir hamle yaparsan seni uyarıp geri almana izin verir.
+- **Oyna:** Bilgisayara karşı, 8 zorluk seviyesinde. Koç modu her hamleden önce kısa bir hatırlatma gösterir, bir şey kaptıracak bir hamle yaparsan seni uyarır ve **↶ Geri al** ile hamleni geri alabilirsin.
 - **Analiz:** Chess.com'un oyun incelemesi gibi: senin ve rakibinin **her hamlesine** bir etiket (Parlak, Harika, En iyi, Çok iyi, İyi, Zorunlu, Yanlışlık, Hata, Büyük hata) ve kısa, sade Türkçe bir açıklama verir.
 - **Bulmaca:** Kendi hatalarından oluşan bulmacalar, aralıklı tekrarla (1, 3, 7, 14, 30 gün) yeniden karşına çıkar.
 
@@ -18,7 +18,7 @@ Her oyundan önce **"Nasıl oynamak istersin?"** diye sorulur (son seçimin işa
   - **Koçun notu:** Her hamleden önce büyük harflerle tek, kısa bir not çıkar. Örnekler: "Bir taşın tehlikede. Önce onu kurtar ya da koru.", "Alabileceğin bir köşe var. Bulabilir misin?" Koç **hangi hamleyi oynaman gerektiğini asla söylemez**; neye bakman gerektiğini söyler. Rakip hata yaptıysa "Rakip hata yaptı! Bunu cezalandıracak hamleyi bul." der.
   - **Hamle analizi:** Notun altında son hamlen ve bilgisayarın cevabı, analiz ekranındaki etiketlerle (En iyi, Çok iyi, Hata…) ve kısa bir açıklamayla görünür.
   - **Üstünlük çubuğu:** Tahtanın solundaki dikey çubuk kimin önde olduğunu gösterir. Alttaki senin rengin; yüzde senin kazanma şansın.
-  - **Uyarı ve geri alma:** Bir şey kaptıracak bir hamle yaparsan koç seni uyarır ve **"Hamlemi geri al"** seçeneği sunar.
+  - **Geri al:** **↶ Geri al** düğmesi son hamleni (ve bilgisayarın cevabını) geri alır; bilgisayar düşünürken de çalışır. Hamleler bekletilmez: bir şey kaptıracak bir hamle yaparsan hamle oynanır, koç altında kısa bir uyarı gösterir ve Geri al düğmesi öne çıkar. (Go'da erken pas uyarısı, pas onayının içinde gösterilir.)
 
   Bu yardımları "Koç ayarları"ndan ayrı ayrı kapatabilirsin. Koç kendi motorunu kullanır, bilgisayarın hamlelerini yavaşlatmaz.
 - **♟ Oynama modu:** Hiç yardım yok, gerçek bir oyun gibi.
@@ -158,7 +158,7 @@ Yanlış cevapta ipucu olarak hangi taşla oynaman gerektiği (yeşil çerçevel
 3. Oynamak için kendi kuyuna (alttaki sıra) tıkla. Dağıtım taş taş gösterilir; yakalanan taşlar son taş düşünce hazineye gider.
 4. Kuyu numaraları sahibinin bakış açısındandır: senin kuyuların soldan sağa 1-6. Hamleler "4. kuyu (tekrar)", "6. kuyu (+4 taş)" gibi yazılır.
 
-**Öğrenme modunda** koç her hamleden önce o anki pozisyona göre iki soru sorar (cevabı söylemeden): kuyularından biri tehlikede mi, taş alabileceğin ya da tekrar oynayabileceğin bir hamle var mı? **Taş kaptırma uyarısı**, rakibe bir sonraki sırasında 3 ya da daha fazla taş kazandıracak bir hamle yaptığında (ve daha güvenli bir hamle varsa) çıkar; tehlikedeki kuyu kırmızıyla gösterilir ve "Hamlemi geri al" diyebilirsin. Tekrar oynama hakkı veren hamlelerde uyarı çıkmaz, çünkü sıra hâlâ sendedir.
+**Öğrenme modunda** koç her hamleden önce o anki pozisyona göre iki soru sorar (cevabı söylemeden): kuyularından biri tehlikede mi, taş alabileceğin ya da tekrar oynayabileceğin bir hamle var mı? **Taş kaptırma uyarısı**, rakibe bir sonraki sırasında 3 ya da daha fazla taş kazandıracak bir hamle yaptığında (ve daha güvenli bir hamle varsa) çıkar; **Geri al** ile hamleni geri alabilirsin. Tekrar oynama hakkı veren hamlelerde uyarı çıkmaz, çünkü sıra hâlâ sendedir.
 
 ### Analiz
 Mangala oyunları uygulamada oynadığın oyunlardır (Chess.com benzeri açık bir kaynak yok). Açıklamalar şunları tanır:
@@ -174,7 +174,7 @@ Sadece 6 kuyu olduğu için ipucu doğru kuyuyu göstermez, **fikri** söyler: "
 ## Go
 
 ### Kurallar (uygulamanın kullandığı)
-- **9 × 9** tahta. Siyah başlar; sırayla çizgilerin kesiştiği boş noktalara taş konur, taşlar yer değiştirmez.
+- **9 × 9**, **13 × 13** ya da **19 × 19** tahta (oyna ekranında seçilir). Siyah başlar; sırayla çizgilerin kesiştiği boş noktalara taş konur, taşlar yer değiştirmez.
 - Bir taşın hemen yanındaki (sağ, sol, üst, alt) boş noktalar onun **nefesidir**. Yan yana duran aynı renk taşlar bir grup olur ve nefeslerini paylaşır. Tek nefesi kalan gruba **atari** denir.
 - Bir grubun bütün nefeslerini kapatan, o taşları yakalayıp tahtadan alır.
 - **İntihar yasak:** Rakibi yakalamıyorsan taşını nefessiz bırakacağın yere oynayamazsın.
@@ -185,15 +185,18 @@ Sadece 6 kuyu olduğu için ipucu doğru kuyuyu göstermez, **fikri** söyler: "
 ### Oyna
 1. Başlamadan önce kısa bir **"Go nasıl oynanır?"** kartı görünür (yarım kalmış bir oyunun varsa kapalı gelir; dokunarak açabilirsin).
 2. Zorluk seç. 1-4 arası seviyeler bilerek hata yapar (1 en çok); **2 (Kolay)** yeni başlayanlar için iyi bir başlangıç, 8 (Usta) en güçlüsüdür.
-3. Rengini seç: **Siyah (ilk sen başla)** / Beyaz / Rastgele.
-4. Taş koymak için bir kesişim noktasına dokun. Hamleler "D4", "E5 (+2 taş)", "Pas" diye yazılır; koordinatlarda I harfi yoktur (A-H, J).
-5. Oynayacak işe yarar yer kalmayınca **Pas geç**e bas (her seferinde onay ister). Bilgisayar da bütün alanlar kapanınca pas geçer.
-6. Oyun bitince alanlar küçük karelerle, ölü sayılan taşlar soluk ve ✕ işaretli gösterilir. Ölü taş tahmini yanlışsa **taşa dokunarak** o grubu ölü ya da canlı yap; sonuç ve kayıtlı oyun hemen güncellenir.
+3. **Tahta boyutunu** seç:
+   - **9×9:** Kısa oyunlar; hamle analizi, üstünlük çubuğu ve bulmacalar yalnızca bu tahtada var. Öğrenirken bununla başla.
+   - **13×13** ve **19×19:** Daha uzun oyunlar. Koçun notu, taş kaptırma uyarısı ve **Alanı göster** burada da var, ama hamleler analiz edilmez ve bulmaca çıkmaz; oyundan yalnızca sonuç puanı gelir. Sebebi: uygulamanın Go motoru hamleleri rastgele oyunlar oynatarak değerlendirir. Bu 9×9'da iyi çalışır, ama büyük tahtalarda açılış hamlelerini çok yanlış ölçer (ölçümde sıradan ilk hamleler 3 ile 23 alan arası "kaybettiriyor" görünüyordu). Yanlış şey öğretmemesi ve haksız puan kırmaması için bu tahtalarda analiz kapalı. Bilgisayar bu tahtalarda da hızlı cevap verir ama 9×9'daki kadar güçlü oynamaz.
+4. Rengini seç: **Siyah** / Beyaz / Rastgele (Siyah ilk başlar).
+5. Taş koymak için bir kesişim noktasına dokun. Hamleler "D4", "E5 (+2 taş)", "Pas" diye yazılır; koordinatlarda I harfi yoktur (A-H, J).
+6. Oynayacak işe yarar yer kalmayınca **Pas geç**e bas (her seferinde onay ister). Bilgisayar da bütün alanlar kapanınca pas geçer.
+7. Oyun bitince alanlar küçük karelerle, ölü sayılan taşlar soluk ve ✕ işaretli gösterilir. Ölü taş tahmini yanlışsa **taşa dokunarak** o grubu ölü ya da canlı yap; sonuç ve kayıtlı oyun hemen güncellenir.
 
-**Öğrenme modunda** koç her hamleden önce o anki pozisyona göre üç soru sorar (cevabı söylemeden): tek ya da iki nefesi kalan taşın var mı, rakibin yakalanabilecek ya da sıkıştırılabilecek taşları var mı, bütün alanlar kapandı mı? **Taş kaptırma uyarısı** şu durumlarda çıkar ve "Hamlemi geri al" diyebilirsin:
-- Taşlarını **atariye sokan** bir hamle (rakip hemen yakalayabilecekse; ko almak hariç). Tehlikedeki taşlar kırmızı, rakibin oynayacağı nokta turuncu halkayla gösterilir.
+**Öğrenme modunda** koç her hamleden önce o anki pozisyona göre üç soru sorar (cevabı söylemeden): tek ya da iki nefesi kalan taşın var mı, rakibin yakalanabilecek ya da sıkıştırılabilecek taşları var mı, bütün alanlar kapandı mı? **Taş kaptırma uyarısı** şu durumlarda çıkar; **Geri al** ile hamleni geri alabilirsin:
+- Taşlarını **atariye sokan** bir hamle (rakip hemen yakalayabilecekse; ko almak hariç).
 - Atarideki 2 ya da daha fazla taşını **kurtarabilecekken** başka yere oynamak.
-- Sahibi belli olmayan yerler varken **erken pas** geçmek. Az sayıda kaldıysa bu noktalar yeşil karelerle gösterilir. Rakip pas geçtikten sonra senin pasın oyunu kaybettirecekse bunu da söyler; kazandığın bir oyunu bitirmene karışmaz.
+- Sahibi belli olmayan yerler varken **erken pas** geçmek: bu uyarı pas onayının içinde, pas geçmeden önce çıkar. Az sayıda kaldıysa bu noktalar yeşil karelerle gösterilir. Rakip pas geçtikten sonra senin pasın oyunu kaybettirecekse bunu da söyler; kazandığın bir oyunu bitirmene karışmaz.
 
 **Alanı göster (öğrenme modunda):** Pas geç düğmesinin yanındaki **Alanı göster** düğmesi, oyunun o anında muhtemel alanları tahtada küçük karelerle işaretler ve tahmini alanı yazar ("Tahmini alan: Siyah 39,5, Beyaz 41,5 + 7,5 komi. Beyaz yaklaşık 9,5 önde."). Tahmin, pozisyondan yüzlerce rastgele oyun oynanıp her noktanın sonunda kime kaldığına bakılarak yapılır; muhtemelen ölecek taşlar çarpıyla gösterilir. Oynama modunda bu yardım yoktur.
 
@@ -226,7 +229,7 @@ Sadece 6 kuyu olduğu için ipucu doğru kuyuyu göstermez, **fikri** söyler: "
 
 ### Oyna
 1. Zorluk seç. 1-5 arası seviyeler bilerek hata yapar; **3 (Kolay+)** iyi bir başlangıç, 8 (Usta) hamle başına en fazla 3,5 saniye düşünür.
-2. Rengini seç: **Beyaz (ilk sen başla)** / Siyah / Rastgele.
+2. Rengini seç: **Beyaz** / Siyah / Rastgele.
 3. Önce taşına, sonra gideceği kareye dokun. Gidebileceği kareler yeşil noktayla gösterilir. Birden fazla durağı olan bir almada son kareye dokunman yeterli; aynı kareye iki farklı yoldan gidilebiliyorsa ara durağa da dokunursun.
 4. Hamleler "c3-c4", alma "d4×d6×f6", dama olma "d7-d8 (dama)" diye yazılır.
 
@@ -255,7 +258,7 @@ Dama oyunları uygulamada oynadığın oyunlardır. Açıklamalar şunları tan�
 
 ### Oyna
 1. Zorluk seç. 1-5 arası seviyeler bilerek hata yapar; **3 (Kolay+)** iyi bir başlangıç. 6 ve üstü seviyeler oyunun son 10 hamlesini (8. seviye son 14 hamlesini) sonuna kadar tam hesaplar.
-2. Rengini seç: **Siyah (ilk sen başla)** / Beyaz / Rastgele.
+2. Rengini seç: **Siyah** / Beyaz / Rastgele.
 3. Oynayabileceğin kareler küçük noktalarla gösterilir. Farenin altındaki kareye oynarsan çevrilecek taşlar soluklaşır. Hamleler "d3 (+2)" diye yazılır (parantezdeki sayı çevrilen taş sayısıdır).
 4. Rakibin oynayamazsa "tekrar sen oynuyorsun" yazısı çıkar.
 

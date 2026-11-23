@@ -33,7 +33,7 @@ const MODE_OPTIONS: { value: PlayMode; icon: string; title: string; text: string
     value: 'learn',
     icon: '🎓',
     title: 'Öğrenme modu',
-    text: 'Koç her hamleden önce kısa bir not verir, hamleleri analiz eder ve kimin önde olduğunu gösterir. Bir şey kaptıracak bir hamlede seni uyarır.',
+    text: 'Koç her hamleden önce kısa bir not verir, hamleleri analiz eder ve kimin önde olduğunu gösterir. Bir şey kaptıracak bir hamlede seni uyarır; hamleni geri alabilirsin.',
   },
   {
     value: 'play',
@@ -44,13 +44,6 @@ const MODE_OPTIONS: { value: PlayMode; icon: string; title: string; text: string
 ]
 
 type Phase = 'loading' | 'setup' | 'playing'
-
-/** A move held back by the coach until the user confirms or takes it back. */
-interface PendingMove {
-  move: string
-  position: string
-  warning: CoachWarning
-}
 
 function levelOf(game: GameModule, id: number): Level {
   return game.levels.find((level) => level.id === id) ?? game.levels[0]
@@ -85,7 +78,10 @@ export default function Play({ game }: { game: GameModule }) {
   const [errorText, setErrorText] = useState<string | null>(null)
   const [confirmResign, setConfirmResign] = useState(false)
   const [confirmPass, setConfirmPass] = useState(false)
-  const [pending, setPending] = useState<PendingMove | null>(null)
+  /** Learning mode: the warning about the user's last move (the move is played anyway; it can be taken back). */
+  const [lastWarning, setLastWarning] = useState<CoachWarning | null>(null)
+  /** The state before each move of this game, newest last: "Geri al" goes back through them. */
+  const undoStack = useRef<unknown[]>([])
   const [gameKey, setGameKey] = useState(0)
   /** Go, learning mode: the likely territory is shown on the board. */
   const [showTerritory, setShowTerritory] = useState(false)
@@ -107,7 +103,7 @@ export default function Play({ game }: { game: GameModule }) {
     const stop = watchAnalysis(savedGameId, (job) => {
       setEndJob(job)
       if (job.status === 'error') void autoSave()
-      if (job.status !== 'done') return
+      if (job.status !== 'done' && job.status !== 'unsupported') return
       // The finished game and its analysis go to Google Drive by themselves.
       void autoSave().then((saved) => alive && setCloudSaved(saved))
       listGames(game.id)
@@ -127,7 +123,9 @@ export default function Play({ game }: { game: GameModule }) {
 
   // Learning mode: the coach's own engine looks at every position as the game goes.
   const liveState = stateRef.current
-  const coachOn = phase === 'playing' && gameMode === 'learn' && !!settings?.liveAnalysis && engineState === 'ready'
+  // Boards the engine cannot judge (Go 13×13 and 19×19): no move analysis and no advantage bar.
+  const judged = !game.canAnalyse || game.canAnalyse(game.position(liveState))
+  const coachOn = phase === 'playing' && gameMode === 'learn' && !!settings?.liveAnalysis && engineState === 'ready' && judged
   const coach = useLiveCoach({
     game,
     enabled: coachOn,
@@ -191,9 +189,9 @@ export default function Play({ game }: { game: GameModule }) {
   ) {
     let state: unknown
     try {
-      state = record ? game.stateFromRecord(record) : game.newState()
+      state = record ? game.stateFromRecord(record) : game.newState({ boardSize: settings?.boardSize })
     } catch {
-      state = game.newState()
+      state = game.newState({ boardSize: settings?.boardSize })
     }
     engine.cancelAll()
     void engine.newGame().catch(() => undefined)
@@ -213,7 +211,8 @@ export default function Play({ game }: { game: GameModule }) {
     savedRecordRef.current = null
     setConfirmResign(false)
     setConfirmPass(false)
-    setPending(null)
+    setLastWarning(null)
+    undoStack.current = []
     setThinking(false)
     setSaved(null)
     setGameKey((k) => k + 1)
@@ -236,7 +235,7 @@ export default function Play({ game }: { game: GameModule }) {
     else if (ending.outcome === 'loss') window.setTimeout(sounds.bad, 250)
     setConfirmResign(false)
     setConfirmPass(false)
-    setPending(null)
+    setLastWarning(null)
     engine.cancelAll()
     await clearSavedPlay(game.id)
 
@@ -292,9 +291,11 @@ export default function Play({ game }: { game: GameModule }) {
   function applyMove(move: string): boolean {
     const next = game.play(stateRef.current, move)
     if (next === null) return false
+    undoStack.current.push(stateRef.current)
     stateRef.current = next
     const played = game.history(next)
-    moveSound(game.id, played[played.length - 1]?.label)
+    const last = played[played.length - 1]
+    moveSound(game.id, last?.label, last && game.stonesPlaced?.(last.before, last.code))
     setVersion((v) => v + 1)
     const ending = game.end(next, userSideRef.current)
     if (ending) void finish(ending)
@@ -302,36 +303,46 @@ export default function Play({ game }: { game: GameModule }) {
     return true
   }
 
+  /** Learning mode: the coach's warning for a move that gives something away (null when it is safe or the warning is off). */
+  function warningFor(move: string): CoachWarning | null {
+    if (modeRef.current !== 'learn' || !settings?.dangerWarning) return null
+    return game.coachWarning(stateRef.current, move)
+  }
+
   function handleUserMove(move: string): boolean {
-    if (phase !== 'playing' || end || thinking || pending) return false
+    if (phase !== 'playing' || end || thinking) return false
     const state = stateRef.current
     if (game.turn(state) !== userSideRef.current) return false
+    // The move is played right away; a risky one gets a short warning and can be taken back.
+    const warning = warningFor(move)
+    if (!applyMove(move)) return false
+    if (warning) statsRef.current.warnings++
+    setLastWarning(warning)
+    return true
+  }
 
-    // Learning mode: hold back a move that gives something away when a safer move exists.
-    if (modeRef.current === 'learn' && settings?.dangerWarning) {
-      const warning = game.coachWarning(state, move)
-      if (warning) {
-        const preview = game.play(state, move)
-        if (preview === null) return false
-        statsRef.current.warnings++
-        setPending({ move, position: game.position(preview), warning })
-        return true
+  /** Takes back the user's last move (and the computer's reply), even while the computer is thinking. */
+  function takeBack() {
+    if (phase !== 'playing' || end) return
+    const stack = undoStack.current
+    let target: unknown = null
+    while (stack.length > 0) {
+      const earlier = stack.pop()!
+      if (game.turn(earlier) === userSideRef.current) {
+        target = earlier
+        break
       }
     }
-    return applyMove(move)
-  }
-
-  function takeBack() {
+    if (target === null) return
+    engine.cancelAll()
+    stateRef.current = target
     statsRef.current.takebacks++
-    setPending(null)
+    setLastWarning(null)
+    setThinking(false)
+    setConfirmPass(false)
+    setShowTerritory(false)
+    setVersion((v) => v + 1)
     persist()
-  }
-
-  function confirmPending() {
-    if (!pending) return
-    const move = pending.move
-    setPending(null)
-    applyMove(move)
   }
 
   // Computer's turn (possibly several moves in a row in games with extra turns).
@@ -454,6 +465,8 @@ export default function Play({ game }: { game: GameModule }) {
             </div>
           </section>
 
+          {game.boardSizes && <BoardSizeChoice game={game} value={settings.boardSize} onChange={(boardSize) => updateSettings({ boardSize })} />}
+
           <section className="card">
             <h2>{game.sideChoiceTitle}</h2>
             <div className="segmented" role="radiogroup" aria-label={game.sideChoiceTitle}>
@@ -517,12 +530,15 @@ export default function Play({ game }: { game: GameModule }) {
   const position = game.position(state)
   const history = game.history(state)
   const lastMove = history.length > 0 ? history[history.length - 1].code : null
-  const canMove = !end && !thinking && !pending && engineState === 'ready'
+  const canMove = !end && !thinking && engineState === 'ready'
+  const canTakeBack = gameMode === 'learn' && !end && undoStack.current.some((earlier) => game.turn(earlier) === userSide)
   const userToMove = !end && !thinking && game.turn(state) === userSide
   // Games counted at the end (Go): after a counted finish the user may correct dead stones.
   const scoringOpen = Boolean(end?.marks && game.scoring)
   const passOption = game.pass
-  const territory = showTerritory && game.territory && gameMode === 'learn' && !end && !pending ? game.territory(state) : null
+  const territory = showTerritory && game.territory && gameMode === 'learn' && !end ? game.territory(state) : null
+  // Go: passing too early is the one warning shown before the move, inside the pass confirmation.
+  const passWarning = confirmPass && game.pass ? warningFor(game.pass.move) : null
 
   let status: string
   if (engineState === 'loading') status = 'Bilgisayar hazırlanıyor…'
@@ -544,12 +560,12 @@ export default function Play({ game }: { game: GameModule }) {
             {coachOn && <EvalBar win={coach.win} userColor={dotColor(game, userSide)} />}
             <Board
               id="board"
-              position={pending ? pending.position : position}
+              position={position}
               perspective={userSide}
               interactive={canMove && game.turn(state) === userSide}
               onMove={handleUserMove}
-              lastMove={pending ? pending.move : lastMove}
-              marks={end?.marks ?? pending?.warning.marks ?? territory?.marks}
+              lastMove={lastMove}
+              marks={end?.marks ?? passWarning?.marks ?? territory?.marks}
               onMark={scoringOpen ? toggleDead : undefined}
             />
           </div>
@@ -585,30 +601,27 @@ export default function Play({ game }: { game: GameModule }) {
                 </a>
               </div>
             </section>
-          ) : pending ? (
-            <section className="warning-card" role="alert">
-              <h2>⚠️ Dikkat!</h2>
-              <p>{pending.warning.text}</p>
-              {pending.warning.marks.length > 0 && (
-                <p className="muted small">{pending.warning.note ?? 'Kırmızı işaretler tehlikeyi gösteriyor.'}</p>
-              )}
-              <div className="button-row">
-                <button type="button" className="btn primary" onClick={takeBack}>
-                  Hamlemi geri al
-                </button>
-                <button type="button" className="btn" onClick={confirmPending}>
-                  Yine de oyna
-                </button>
-              </div>
-            </section>
           ) : (
             <>
               <div className={`status-box${errorText ? ' error' : ''}`}>{status}</div>
+              {lastWarning && (
+                <p className="warning-note" role="status">
+                  ⚠️ {lastWarning.text}
+                </p>
+              )}
+              {gameMode === 'learn' && (
+                <div className="button-row takeback-row">
+                  <button type="button" className={`btn${lastWarning ? ' primary' : ''}`} onClick={takeBack} disabled={!canTakeBack}>
+                    ↶ Geri al
+                  </button>
+                </div>
+              )}
               {passOption &&
                 userToMove &&
                 engineState === 'ready' &&
                 (confirmPass ? (
                   <div className="confirm-row">
+                    {passWarning && <p className="warning-note">⚠️ {passWarning.text}</p>}
                     <span>{passOption.confirm(state)}</span>
                     <div className="button-row">
                       <button
@@ -652,7 +665,7 @@ export default function Play({ game }: { game: GameModule }) {
                   history={history}
                   userSide={userSide}
                   showTip={settings.coachMode && userToMove}
-                  coach={settings.liveAnalysis ? coach : null}
+                  coach={settings.liveAnalysis && judged ? coach : null}
                 />
               )}
             </>
@@ -723,7 +736,7 @@ function CoachToggles({
         onChange={(liveAnalysis) => onChange({ liveAnalysis })}
       />
       <Toggle
-        label={`${game.warningLabel.title} ve geri alma`}
+        label={game.warningLabel.title}
         description={game.warningLabel.description}
         checked={settings.dangerWarning}
         onChange={(dangerWarning) => onChange({ dangerWarning })}
@@ -825,6 +838,18 @@ function rankText({ total, rank, previousLevel }: EndRank): string {
 /** Progress of the background analysis of the game that just ended, how many puzzles it saved, and the points level. */
 function EndAnalysisStatus({ job, rank, cloudSaved }: { job: AnalysisJob; rank: EndRank | null; cloudSaved: boolean }) {
   if (job.status === 'error') return <p className="end-analysis error">Analiz yapılamadı: {job.error}</p>
+  if (job.status === 'unsupported') {
+    return (
+      <div className="end-analysis done">
+        <p>
+          ✓ Oyun kaydedildi.{job.points !== undefined && ` Sonucundan ${signed(job.points)} puan.`} Bu tahta boyutunda hamle analizi
+          yapılmıyor.
+        </p>
+        {rank && <p className={`end-rank${rank.rank.level > rank.previousLevel ? ' level-up' : ''}`}>{rankText(rank)}</p>}
+        {cloudSaved && <p className="end-cloud">☁️ Google Drive'a kaydedildi.</p>}
+      </div>
+    )
+  }
   if (job.status === 'done') {
     const n = job.newPuzzles ?? 0
     return (
@@ -846,5 +871,31 @@ function EndAnalysisStatus({ job, rank, cloudSaved }: { job: AnalysisJob; rank: 
         <div style={{ width: `${pct}%` }} />
       </div>
     </div>
+  )
+}
+
+/** Board sizes (Go): small for learning, the full board for real games. */
+function BoardSizeChoice({ game, value, onChange }: { game: GameModule; value?: number; onChange: (size: number) => void }) {
+  const sizes = game.boardSizes ?? []
+  const current = sizes.find((s) => s.value === value) ?? sizes[0]
+  return (
+    <section className="card">
+      <h2>Tahta boyutu</h2>
+      <div className="segmented" role="radiogroup" aria-label="Tahta boyutu">
+        {sizes.map((size) => (
+          <button
+            key={size.value}
+            type="button"
+            role="radio"
+            aria-checked={current?.value === size.value}
+            className={current?.value === size.value ? 'selected' : ''}
+            onClick={() => onChange(size.value)}
+          >
+            {size.label}
+          </button>
+        ))}
+      </div>
+      {current && <p className="muted small board-size-note">{current.note}</p>}
+    </section>
   )
 }

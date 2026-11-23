@@ -2,6 +2,7 @@ import type { GameRecord } from '../../db/types'
 import { sortedErrorTypes } from '../analysis/summary'
 import { outcomeFor, type RecordOutcome } from '../records'
 import type { GameModule, GamePhase } from '../types'
+import { analysable } from '../analysable'
 import { pointsTotal } from './points'
 
 /**
@@ -29,6 +30,8 @@ export interface RecentGame {
   createdAt: number
   /** The user's mistakes and blunders, if analysed. */
   errors: number | null
+  /** False for games whose moves are never analysed (Go on the big boards). */
+  analysable: boolean
   /** Points this game added to the total. */
   points: number
 }
@@ -56,7 +59,8 @@ export interface PlayerSummary {
   previousErrorRate: number | null
 }
 
-type ModuleInfo = Pick<GameModule, 'levels' | 'defaultLevel' | 'phaseOf' | 'errorTypes'>
+type ModuleInfo = Pick<GameModule, 'levels' | 'defaultLevel' | 'phaseOf' | 'errorTypes'> &
+  Partial<Pick<GameModule, 'canAnalyse' | 'position' | 'stateFromRecord'>>
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
 
@@ -139,6 +143,7 @@ export function playerSummary(games: GameRecord[], game: ModuleInfo): PlayerSumm
     level: typeof g.level === 'number' ? g.level : null,
     createdAt: g.playedAt ?? g.createdAt,
     errors: g.analysis ? g.analysis.summary.counts.mistake + g.analysis.summary.counts.blunder : null,
+    analysable: g.analysis ? true : analysable(game, g.record),
     points: perGame.get(g.id) ?? 0,
   }))
 

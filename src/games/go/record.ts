@@ -1,6 +1,7 @@
 import type { MoveRecord, MoverResult, ReadGame, Side } from '../../core/types'
 import { BLACK, DEFAULT_KOMI, WHITE } from './fastboard'
 import {
+  BOARD_SIZES,
   applyMove,
   encode,
   finalScore,
@@ -26,8 +27,9 @@ export function moveRecord(before: GoPosition, move: string, result: GoMoveResul
   return { code: move, label: labelFor(result), side: result.mover, before: encode(before), after: encode(result.position) }
 }
 
-export function newState(): GoState {
-  const start = initialPosition()
+/** A new game on a 9×9, 13×13 or 19×19 board (9×9 for anything else). */
+export function newState(size = 9): GoState {
+  const start = initialPosition(BOARD_SIZES.includes(size) ? size : 9)
   return { start, position: start, moves: [], dead: null }
 }
 

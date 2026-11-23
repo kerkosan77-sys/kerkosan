@@ -20,6 +20,17 @@ export interface GoAnalysis {
   ownership: number[]
 }
 
+/**
+ * Random games cost more on bigger boards (about 2× on 13×13 and 4.3× on 19×19), so the computer
+ * plays fewer of them there and answers about as quickly as on 9×9. (Moves are only analysed on
+ * 9×9: on the big boards random games misjudge the opening badly, measured at 3-23 points for
+ * ordinary first moves, so their judgments would teach wrong things.)
+ */
+const MOVE_SHARE: Record<number, number> = { 9: 1, 13: 0.5, 19: 0.2 }
+export function playoutsFor(playouts: number, size: number): number {
+  return Math.max(100, Math.round(playouts * (MOVE_SHARE[size] ?? 1)))
+}
+
 function moveCode(fast: FastBoard, move: number): string {
   return move === PASS ? PASS_MOVE : coordOf(fast.plain(move), fast.size)
 }
@@ -82,7 +93,7 @@ export function chooseGoMove(positionText: string, level: GoLevel, rng: Rng = Ma
   // Nothing left to fight over: pass instead of filling in territory.
   if (!hasContestedPoints(position)) return PASS_MOVE
 
-  const result = search(fast, { playouts: level.playouts, rng, passEndsMargin: passMargin })
+  const result = search(fast, { playouts: playoutsFor(level.playouts, position.size), rng, passEndsMargin: passMargin })
   // While something is open, a move is never worse than passing under area scoring
   // (the search may still rank "pass" first when every move looks equally won or lost).
   const top = result.children.find((child) => child.move !== PASS)

@@ -405,7 +405,7 @@ function PlayerCard({ game, progress, onShowRanks }: { game: GameModule; progres
                   </span>
                   <span className="recent-meta">
                     <span className={g.points > 0 ? 'up' : g.points < 0 ? 'down' : ''}>{signed(g.points)}</span> ·{' '}
-                    {g.errors !== null ? `${g.errors} hata` : 'analiz bekliyor'} · {shortDate(g.createdAt)}
+                    {g.errors !== null ? `${g.errors} hata` : g.analysable ? 'analiz bekliyor' : 'analiz yok'} · {shortDate(g.createdAt)}
                   </span>
                 </a>
               </li>

@@ -1656,6 +1656,10 @@ button.level-box:hover,
   color: var(--danger);
 }
 
+.board-size-note {
+  margin: 8px 0 0;
+}
+
 .end-analysis .end-rank {
   color: var(--text);
   font-weight: 600;
@@ -2828,6 +2832,19 @@ textarea:focus {
 
 .coach-box li + li {
   margin-top: 2px;
+}
+
+.warning-note {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.takeback-row {
+  margin: 8px 0;
 }
 
 .warning-card {

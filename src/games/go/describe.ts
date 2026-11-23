@@ -39,13 +39,17 @@ export function describeGoMove(position: string, move: string): MoveFacts | null
   return { text: factsSentence(facts), forced }
 }
 
-/** On 9×9: opening up to 14 stones; endgame once 44 stones are on the board or no open area is left. */
+/**
+ * Opening while about a sixth of the board holds stones (14 on 9×9, 29 on 13×13, 62 on 19×19);
+ * endgame once more than half of it does (44 on 9×9) or no open area is left.
+ */
 export function goPhase(position: string): GamePhase {
   try {
     const start = decode(position)
     const stones = start.board.reduce((sum, point) => (point === 0 ? sum : sum + 1), 0)
-    if (stones >= 44 || !hasContestedPoints(start)) return 'endgame'
-    if (stones <= 14) return 'opening'
+    const points = start.size * start.size
+    if (stones >= Math.round(points * 0.54) || !hasContestedPoints(start)) return 'endgame'
+    if (stones <= Math.round(points * 0.172)) return 'opening'
   } catch {
     // fall through
   }

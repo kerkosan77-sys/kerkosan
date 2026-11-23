@@ -78,7 +78,7 @@ export const chessModule: GameModule<ChessState> = {
   computerDelayMs: 450,
   warningLabel: {
     title: 'Taş bırakma uyarısı',
-    description: 'Bir taşını karşılıksız kaptıracak bir hamle yaparsan seni uyarır ve hamleni geri almanı sağlar.',
+    description: 'Bir taşını karşılıksız kaptıracak bir hamle yaparsan hamlenin altında seni uyarır; istersen Geri al ile hamleni geri alırsın.',
   },
 
   newState: () => ({ game: new Chess() }),
