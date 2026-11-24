@@ -8,7 +8,7 @@ import { queueAnalysis, watchAnalysis, type AnalysisJob } from '../core/analysis
 import { autoSave } from '../core/cloud'
 import { CLASSIFICATION_INFO, isErrorClass } from '../core/classify'
 import { moveSound, sounds } from '../core/sound'
-import { playerSummary } from '../core/stats/player'
+import { cachedProgress, loadProgress } from '../core/stats/homeCache'
 import { pointsTotal, signed } from '../core/stats/points'
 import { pointsRank, type PointsRank } from '../core/stats/rank'
 import { EngineCancelledError } from '../core/engine'
@@ -144,9 +144,13 @@ export default function Play({ game }: { game: GameModule }) {
       setSaved(play ?? null)
       setPhase('setup')
     })
-    listGames(game.id)
-      .then((games) => alive && setSuggested(playerSummary(games, game).recommended))
-      .catch(() => undefined)
+    // The bot to suggest comes from the stored player summary (reading every game again would be slow).
+    const known = cachedProgress(game.id)
+    if (known) setSuggested(known.summary.recommended)
+    else
+      loadProgress(game)
+        .then((progress) => alive && setSuggested(progress.summary.recommended))
+        .catch(() => undefined)
     engine
       .start()
       .then(() => alive && setEngineState('ready'))
