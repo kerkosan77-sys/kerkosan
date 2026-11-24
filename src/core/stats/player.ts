@@ -1,7 +1,7 @@
 import type { GameRecord } from '../../db/types'
 import { sortedErrorTypes } from '../analysis/summary'
 import { outcomeFor, type RecordOutcome } from '../records'
-import type { GameModule, GamePhase } from '../types'
+import type { GameModule, GamePhase, Side } from '../types'
 import { analysable } from '../analysable'
 import { pointsTotal } from './points'
 
@@ -50,6 +50,8 @@ export interface PlayerSummary {
   weakest: GamePhase | null
   /** Most common error types in recent analysed games, most frequent first. */
   topErrors: [string, number][]
+  /** The user's worst error in the latest analysed game (for "Dikkat et"), or null. */
+  lastMistake: { gameId: string; ply: number; side: Side; label: string; errorType: string } | null
   recent: RecentGame[]
   /** Total points, and what the latest game added (null without games). */
   points: number
@@ -157,11 +159,22 @@ export function playerSummary(games: GameRecord[], game: ModuleInfo): PlayerSumm
     topErrors: sortedErrorTypes(
       errorTypes,
       game.errorTypes.map((t) => t.id),
-    ).slice(0, 2),
+    ).slice(0, 3),
+    lastMistake: lastMistakeOf(analysed[0]),
     recent,
     points: total,
     lastPoints: games.length > 0 ? (perGame.get(games[0].id) ?? 0) : null,
     errorRate: rate(allAnalysed.slice(0, SUMMARY_WINDOW)),
     previousErrorRate: previousGames.length >= 3 ? rate(previousGames) : null,
   }
+}
+
+/** The biggest blunder (or else mistake) the user made in a game, for a concrete "Dikkat et" note. */
+function lastMistakeOf(game: GameRecord | undefined): PlayerSummary['lastMistake'] {
+  if (!game?.analysis) return null
+  const errors = game.analysis.moves.filter((m) => m.isUserMove && (m.classification === 'blunder' || m.classification === 'mistake'))
+  if (errors.length === 0) return null
+  const rank = (m: (typeof errors)[number]) => (m.classification === 'blunder' ? 1000 : 0) + (m.drop ?? 0)
+  const worst = errors.reduce((a, b) => (rank(b) > rank(a) ? b : a))
+  return { gameId: game.id, ply: worst.ply, side: worst.side, label: worst.label, errorType: worst.errorType ?? 'other' }
 }

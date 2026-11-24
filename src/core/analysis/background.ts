@@ -1,5 +1,6 @@
 import { addPuzzles, getGame, saveGame } from '../../db/db'
 import { analysable } from '../analysable'
+import { refreshSummary } from '../stats/homeCache'
 import type { GameRecord } from '../../db/types'
 import { buildPuzzles } from '../puzzles/fromAnalysis'
 import { gamePoints } from '../stats/points'
@@ -79,6 +80,7 @@ async function run(game: GameModule, gameId: string): Promise<GameRecord | null>
   }
   if (!analysable(game, found.record)) {
     update({ gameId, status: 'unsupported', done: 1, total: 1, newPuzzles: 0, points: gamePoints(found).total })
+    void refreshSummary(game).catch(() => undefined)
     return null
   }
   if (found.analysis?.version === analysisVersion(game)) {
@@ -99,6 +101,8 @@ async function run(game: GameModule, gameId: string): Promise<GameRecord | null>
     const updated: GameRecord = { ...latest, analysis }
     await saveGame(updated)
     const newPuzzles = await addPuzzles(buildPuzzles(updated, Date.now(), game.phaseOf))
+    // The home screen's summary is worked out now, once, instead of every time the home screen opens.
+    await refreshSummary(game).catch(() => undefined)
     update({ gameId, status: 'done', done: 1, total: 1, newPuzzles, points: gamePoints(updated).total })
     return updated
   } catch (error) {

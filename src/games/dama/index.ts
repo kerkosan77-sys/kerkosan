@@ -165,9 +165,24 @@ export const damaModule: GameModule<DamaState> = {
   defaultLevel: 3,
   analysisDepth: 7,
   phaseTips: {
-    opening: 'Taşlarını birlikte ilerlet, arkalarını boş bırakma.',
-    middlegame: 'Zorunlu alma tuzaklarına ve taş kaptırma tehditlerine dikkat et.',
-    endgame: 'Dama yapmaya çalış, rakibin dama olmasını engelle.',
+    opening: [
+      'Taşlarını birlikte ilerlet, arkalarını boş bırakma.',
+      'Kenardaki taşını tek başına öne sürme.',
+      'Arka sıranı erken boşaltma; rakibin dama olmasını zorlaştırır.',
+      'Taşlarını yan yana tut, aralarında boşluk bırakma.',
+    ],
+    middlegame: [
+      'Zorunlu alma tuzaklarına ve taş kaptırma tehditlerine dikkat et.',
+      'Hamleden önce rakibi hangi taşını almaya zorlayacağını düşün.',
+      'Bir taş verip iki taş alabileceğin fırsatları ara.',
+      'Taşını, arkası boş bir kareye ilerletme.',
+    ],
+    endgame: [
+      'Dama yapmaya çalış, rakibin dama olmasını engelle.',
+      'Daman varsa onu uzun çizgilerde kullan.',
+      'Taş sayısı azaldıkça her hamleyi sonuna kadar hesapla.',
+      'Rakibin son sıraya yaklaşan taşını durdurmak önceliğin olsun.',
+    ],
   },
   errorTypes: [
     { id: 'allowed_capture', label: 'Rakibe taş kaptırma', tip: 'Hamlenden sonra rakip taş alabilir mi, bak.' },

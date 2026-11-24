@@ -132,8 +132,19 @@ export const clearSavedPlay = (game: GameId) => deleteValue(`currentGame:${game}
 
 // ---------- games ----------
 
+/**
+ * A stamp per game type that changes whenever one of its games is saved, so the stored player
+ * summary (see core/stats/homeCache) is worked out again only after a change.
+ */
+const stampKey = (game: GameId) => `gamesStamp:${game}`
+const newStamp = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+export const loadGamesStamp = (game: GameId) => getValue<string>(stampKey(game))
+export const loadSummaryCache = (game: GameId) => getValue<unknown>(`summary:${game}`)
+export const saveSummaryCache = (game: GameId, value: unknown) => setValue(`summary:${game}`, value)
+
 export async function saveGame(game: GameRecord): Promise<void> {
   await (await getDB()).put('games', game)
+  await setValue(stampKey(game.gameType), newStamp())
 }
 
 export async function getGame(id: string): Promise<GameRecord | undefined> {
@@ -227,10 +238,11 @@ const lessonList = (value: unknown): string[] =>
 
 /** Everything stored on this device, for the "Yedekle" button. */
 /**
- * Rows that belong to one device and never travel in a backup: the unfinished game. If it did, a game
- * finished or deleted here would come back from the Drive copy at the next sync, again and again.
+ * Rows that belong to one device and never travel in a backup: the unfinished game (if it did, a game
+ * finished or deleted here would come back from the Drive copy at the next sync, again and again) and
+ * the stored home-screen summary with its stamp (worked out on each device from its own games).
  */
-const deviceOnly = (key: string) => key.startsWith('currentGame:')
+const deviceOnly = (key: string) => key.startsWith('currentGame:') || key.startsWith('gamesStamp:') || key.startsWith('summary:')
 
 export async function exportBackup(): Promise<Backup> {
   const db = await getDB()
@@ -250,6 +262,7 @@ export async function importBackup(backup: Backup): Promise<{ games: number; puz
   const tx = (await getDB()).transaction(['games', 'puzzles', 'attempts', 'kv'], 'readwrite')
   let games = 0
   let puzzles = 0
+  const changedTypes = new Set<GameId>()
   const gameStore = tx.objectStore('games')
   for (const game of backup.games) {
     const existing = await gameStore.get(game.id)
@@ -257,6 +270,7 @@ export async function importBackup(backup: Backup): Promise<{ games: number; puz
     // Keep the copy with the newer analysis (another device may have analysed it later, or not yet).
     if (existing && (existing.analysis?.analyzedAt ?? 0) >= (game.analysis?.analyzedAt ?? 0)) continue
     await gameStore.put(game)
+    changedTypes.add(game.gameType)
   }
   const puzzleStore = tx.objectStore('puzzles')
   for (const puzzle of backup.puzzles) {
@@ -285,5 +299,6 @@ export async function importBackup(backup: Backup): Promise<{ games: number; puz
     }
   }
   await tx.done
+  for (const type of changedTypes) await setValue(stampKey(type), newStamp())
   return { games, puzzles }
 }

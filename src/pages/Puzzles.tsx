@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import TopBar from '../components/TopBar'
-import { CLASSIFICATION_INFO } from '../core/classify'
 import { EngineCancelledError } from '../core/engine'
 import { checkAnswer, engineEvaluator } from '../core/puzzles/checkAnswer'
+import { explainSolution, winChangeText } from '../core/puzzles/explainSolution'
 import { moveSound, sounds } from '../core/sound'
 import { BOX_INTERVAL_DAYS, boxCounts, duePuzzles, nextDueAt, relativeDay, schedule } from '../core/puzzles/leitner'
 import { formatDate, opponentName } from '../core/records'
@@ -186,7 +186,8 @@ function PuzzleSolver({ game, puzzle, number, total, isLast, onReviewed, onNext 
   const startMove = puzzle.prevMove ?? null
   const [source, setSource] = useState<GameRecord | null>(null)
   const [status, setStatus] = useState<Status>('ready')
-  const [attempt, setAttempt] = useState<1 | 2>(1)
+  /** Wrong tries so far; the hint comes after the third. */
+  const [wrongs, setWrongs] = useState(0)
   const [position, setPosition] = useState(puzzle.position)
   const [lastMove, setLastMove] = useState<string | null>(startMove)
   const [answerLabel, setAnswerLabel] = useState<string | null>(null)
@@ -231,7 +232,7 @@ function PuzzleSolver({ game, puzzle, number, total, isLast, onReviewed, onNext 
     void finish('failed')
   }
 
-  async function judge(move: string, currentAttempt: 1 | 2) {
+  async function judge(move: string, wrongsSoFar: number) {
     try {
       const engine = game.engine('coach')
       const verdict = await checkAnswer(game, puzzle, move, engineEvaluator(game, engine, game.analysisDepth))
@@ -241,17 +242,17 @@ function PuzzleSolver({ game, puzzle, number, total, isLast, onReviewed, onNext 
         sounds.good()
         setIsBest(verdict.isBest)
         setStatus('solved')
-        await finish(currentAttempt === 1 ? 'correct' : 'hint')
-      } else if (currentAttempt === 1) {
+        await finish(wrongsSoFar === 0 ? 'correct' : 'hint')
+      } else {
+        // As many tries as needed; the board goes back after a moment.
         sounds.bad()
+        setWrongMove(move)
         setStatus('wrong')
         timer.current = window.setTimeout(() => {
           resetBoard()
-          setAttempt(2)
+          setWrongs(wrongsSoFar + 1)
           setStatus('ready')
         }, 900)
-      } else {
-        revealSolution(move)
       }
     } catch (e) {
       if (!alive.current || e instanceof EngineCancelledError) return
@@ -270,13 +271,13 @@ function PuzzleSolver({ game, puzzle, number, total, isLast, onReviewed, onNext 
     setLastMove(move)
     moveSound(game.id, played.label, game.stonesPlaced?.(puzzle.position, move))
     setStatus('checking')
-    void judge(move, attempt)
+    void judge(move, wrongs)
     return true
   }
 
   const hint = game.puzzleHint(puzzle)
-  const classLabel = CLASSIFICATION_INFO[puzzle.classification].label.toLocaleLowerCase('tr-TR')
-  const showHint = attempt === 2 && (status === 'ready' || status === 'checking')
+  const HINT_AFTER = 3
+  const showHint = wrongs >= HINT_AFTER && (status === 'ready' || status === 'checking')
   const done = status === 'solved' || status === 'failed'
 
   let marks: BoardMark[] = []
@@ -313,13 +314,19 @@ function PuzzleSolver({ game, puzzle, number, total, isLast, onReviewed, onNext 
         <section className={`puzzle-card ${status}`}>
           {!done && (
             <>
-              <h2>Burada ne oynamalıydın?</h2>
-              <p>
-                Sıra sende ({game.sideLabels[puzzle.userSide]}). Oyunda burada <strong>{puzzle.playedLabel}</strong> oynamıştın ve bu
-                bir {classLabel}ydı. Daha iyisini bulabilir misin?
-              </p>
+              <h2>En iyi hamleyi bul</h2>
+              <p>Sıra sende ({game.sideLabels[puzzle.userSide]}).</p>
               {status === 'checking' && <p className="muted">Kontrol ediliyor…</p>}
-              {status === 'wrong' && answerLabel && <p className="feedback wrong">{answerLabel} olmadı. Bir ipucu geliyor…</p>}
+              {status === 'wrong' && answerLabel && (
+                <p className="feedback wrong">
+                  {answerLabel} olmadı. {wrongs + 1 >= HINT_AFTER ? 'Sana bir ipucu veriyorum.' : 'Tekrar dene.'}
+                </p>
+              )}
+              {status === 'ready' && wrongs > 0 && wrongs < HINT_AFTER && (
+                <p className="muted small">
+                  {wrongs}. deneme olmadı. {HINT_AFTER - wrongs === 1 ? 'Bir yanlış daha olursa ipucu gelecek.' : 'Düşün ve tekrar dene.'}
+                </p>
+              )}
               {showHint && <p className="feedback hint">{hint.text}</p>}
               {error && <p className="error-box">{error}</p>}
               <button
@@ -346,7 +353,7 @@ function PuzzleSolver({ game, puzzle, number, total, isLast, onReviewed, onNext 
                     <strong>{answerLabel}</strong> oynadın. Bu hamle de en iyisi kadar iyi. Motorun önerisi: {puzzle.bestLabel}.
                   </>
                 )}
-                {attempt === 2 && ' (İpucuyla çözdün.)'}
+                {wrongs >= HINT_AFTER ? ' (İpucuyla çözdün.)' : wrongs > 0 ? ` (${wrongs + 1}. denemede çözdün.)` : ''}
               </p>
             </>
           )}
@@ -360,11 +367,8 @@ function PuzzleSolver({ game, puzzle, number, total, isLast, onReviewed, onNext 
 
           {done && (
             <>
+              <SolutionExplanation game={game} puzzle={puzzle} source={source} />
               <div className="explain-block">
-                <p className="muted small">Oyunda ne olmuştu?</p>
-                <p>
-                  <strong>{puzzle.playedLabel}</strong> oynamıştın. {puzzle.explanation}
-                </p>
                 {others.length > 0 && (
                   <p className="muted small">Kabul edilen diğer hamleler: {others.map((c) => c.label).join(', ')}</p>
                 )}
@@ -478,5 +482,26 @@ function FinishedScreen({
         </a>
       </div>
     </section>
+  )
+}
+
+/** After a puzzle: why the game's move was bad, what the right move does, and how much it kept. */
+function SolutionExplanation({ game, puzzle, source }: { game: GameModule; puzzle: PuzzleRecord; source: GameRecord | null }) {
+  const facts = game.describeMove?.(puzzle.position, puzzle.bestMove)?.text ?? null
+  const text = explainSolution(puzzle.explanation, facts)
+  const original = source?.analysis?.moves.find((m) => m.ply === puzzle.ply)
+  const change = winChangeText(original?.winBefore, original?.winAfter)
+  return (
+    <div className="explain-block solution-explain">
+      <p className="muted small">Oyundaki hatan</p>
+      <p>
+        <strong>{puzzle.playedLabel}</strong>: {text.mistake}
+      </p>
+      <p className="muted small">Doğru hamle ne işe yarıyor?</p>
+      <p>
+        <strong>{puzzle.bestLabel}</strong>: {text.right}
+      </p>
+      {change && <p className="solution-change">{change}</p>}
+    </div>
   )
 }

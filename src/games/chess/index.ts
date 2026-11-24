@@ -70,9 +70,24 @@ export const chessModule: GameModule<ChessState> = {
   analysisDepth: 14,
   errorTypes: CHESS_ERROR_TYPES,
   phaseTips: {
-    opening: 'Merkezi tut, atlarını ve fillerini çıkar, erken rok yap.',
-    middlegame: 'Her hamleden önce saldırı altındaki taşlarına ve rakibin tehditlerine bak.',
-    endgame: 'Şahını oyuna sok, geçer piyonunu ilerlet.',
+    opening: [
+      'Merkezi tut, atlarını ve fillerini çıkar, erken rok yap.',
+      'Açılışta aynı taşı iki kez oynama; her hamlede yeni bir taş çıkar.',
+      'Vezirini erken çıkarma; rakip onu kovalarken taşlarını geliştirir.',
+      'Rok yapmadan şahının önündeki piyonları oynatma.',
+    ],
+    middlegame: [
+      'Her hamleden önce saldırı altındaki taşlarına ve rakibin tehditlerine bak.',
+      'Rakibin son hamlesi neyi tehdit ediyor? Önce bunu sor.',
+      'Hamle seçmeden önce şah, alma ve tehdit hamlelerine bak: önce seninkiler, sonra rakibinkiler.',
+      'Korumasız taş bırakma; her taşının en az bir koruyucusu olsun.',
+    ],
+    endgame: [
+      'Şahını oyuna sok, geçer piyonunu ilerlet.',
+      'Öndeysen taş değiş; gerideysen değişten kaçın.',
+      'Kaleni geçer piyonların arkasına yerleştir.',
+      'Piyonunun vezire çıkacağı yolu şahınla destekle.',
+    ],
   },
   moveListLayout: 'pairs',
   computerDelayMs: 450,

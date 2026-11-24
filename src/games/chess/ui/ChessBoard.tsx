@@ -27,6 +27,14 @@ const DOT = 'radial-gradient(circle, rgba(20, 30, 20, 0.28) 22%, transparent 24%
 const RING = 'radial-gradient(circle, transparent 72%, rgba(20, 30, 20, 0.3) 74%)'
 const CHECK = 'radial-gradient(circle, rgba(230, 40, 40, 0.95) 0%, rgba(230, 40, 40, 0.55) 45%, transparent 75%)'
 
+/**
+ * A drag starts only after the finger or mouse moves this far. The library starts at 1 pixel, and a
+ * finger almost always moves a little while tapping, so on phones a tap often became a tiny drag and
+ * the piece was not selected.
+ */
+const DRAG_START_PX =
+  typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 12 : 5
+
 const PROMOTION_PIECES = [
   { piece: 'q', name: 'Vezir', w: '♕', b: '♛' },
   { piece: 'r', name: 'Kale', w: '♖', b: '♜' },
@@ -80,8 +88,13 @@ export default function Board({
   }
 
   function handleDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean {
+    // Dropped back on its own square: that was a tap, so the piece stays selected for a tap-move.
+    if (!targetSquare || sourceSquare === targetSquare) {
+      setSelected(canMove ? sourceSquare : null)
+      return false
+    }
     setSelected(null)
-    if (!canMove || !targetSquare || sourceSquare === targetSquare) return false
+    if (!canMove) return false
     return tryMove(sourceSquare, targetSquare)
   }
 
@@ -137,6 +150,7 @@ export default function Board({
           position: fen,
           boardOrientation: orientation,
           allowDragging: canMove,
+          dragActivationDistance: DRAG_START_PX,
           canDragPiece: ({ piece }) => canMove && piece.pieceType[0] === movableColor,
           onPieceDrag: ({ square }) => {
             if (canMove && square) setSelected(square)

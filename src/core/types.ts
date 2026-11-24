@@ -191,7 +191,8 @@ export interface GameModule<S = unknown> {
   /** Error categories, most fundamental first; must include "other". `tip` says what to watch out for. */
   errorTypes: { id: string; label: string; tip?: string }[]
   /** One short piece of advice per part of the game, for the player summary. */
-  phaseTips?: Record<GamePhase, string>
+  /** Short advice for each part of the game; one is picked each time, so "Dikkat et" changes. */
+  phaseTips?: Record<GamePhase, string[]>
   /** 'pairs' = two moves per row (chess), 'list' = one move per row (games with extra turns). */
   moveListLayout: 'pairs' | 'list'
   warningLabel: { title: string; description: string }

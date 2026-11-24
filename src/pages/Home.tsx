@@ -16,9 +16,8 @@ import {
   type SyncResult,
 } from '../core/cloud'
 import { canPromptInstall, isInstalledApp, onInstallChange, promptInstall } from '../core/install'
-import { duePuzzles } from '../core/puzzles/leitner'
-import { OUTCOME_LABELS, type RecordOutcome } from '../core/records'
-import { playerSummary, type PlayerSummary } from '../core/stats/player'
+import { cachedProgress, loadProgress, type Progress } from '../core/stats/homeCache'
+import type { PlayerSummary } from '../core/stats/player'
 import { MOVE_POINTS, RESULT_POINTS, signed } from '../core/stats/points'
 import { pointsRank, rangeText, rankLadder } from '../core/stats/rank'
 import { CLASSIFICATION_INFO, type Classification } from '../core/classify'
@@ -30,25 +29,26 @@ import {
   exportBackup,
   importBackup,
   listGames,
-  loadLessonProgress,
-  listPuzzles,
   loadAppSettings,
   readBackup,
   updateAppSettings,
 } from '../db/db'
 import { GAMES, UPCOMING, gameById } from '../games/registry'
 
-interface Progress {
-  gameId: string
-  summary: PlayerSummary
-  due: number
-  lessonsDone: number
-}
+/** Work done once when the app opens (not on every return to the home screen): sync, and analysing missed games. */
+let startedThisVisit = false
 
 export default function Home() {
   const [selected, setSelected] = useState<GameModule | null>(null)
   /** Every game's summary, loaded up front so switching games is instant. */
-  const [progress, setProgress] = useState<Record<string, Progress>>({})
+  const [progress, setProgress] = useState<Record<string, Progress>>(() => {
+    const known: Record<string, Progress> = {}
+    for (const game of GAMES) {
+      const cached = cachedProgress(game.id)
+      if (cached) known[game.id] = cached
+    }
+    return known
+  })
   const touchStart = useRef<{ x: number; y: number } | null>(null)
   // Just back from Google's sign-in page: the sync window opens and finishes the sync.
   const [panel, setPanel] = useState<'data' | 'install' | 'cloud' | 'ranks' | null>(() => (cameBackFromGoogle() ? 'cloud' : null))
@@ -57,6 +57,8 @@ export default function Home() {
 
   useEffect(() => {
     loadAppSettings().then((settings) => setSelected(gameById(settings.lastGame) ?? GAMES[0]))
+    if (startedThisVisit) return
+    startedThisVisit = true
     // Games never analysed (for example finished while the app was closed) get analysed now, so their puzzles exist.
     listGames()
       .then((games) => analyseMissing(games, (record) => gameById(record.gameType)))
@@ -71,17 +73,9 @@ export default function Home() {
   useEffect(() => {
     let alive = true
     for (const game of GAMES) {
-      Promise.all([listGames(game.id), listPuzzles(game.id), loadLessonProgress(game.id)])
-        .then(([games, puzzles, lessons]) => {
-          if (!alive) return
-          const entry: Progress = {
-            gameId: game.id,
-            summary: playerSummary(games, game),
-            due: duePuzzles(puzzles, Date.now()).length,
-            lessonsDone: lessons.length,
-          }
-          setProgress((all) => ({ ...all, [game.id]: entry }))
-        })
+      // The stored summary is used until a game changes (see homeCache), so this is quick.
+      loadProgress(game)
+        .then((entry) => alive && setProgress((all) => ({ ...all, [game.id]: entry })))
         .catch(() => undefined)
     }
     return () => {
@@ -198,20 +192,13 @@ export default function Home() {
                 className="play"
               />
               {selected.lessons && selected.lessons.length > 0 && (
-                <HomeButton
-                  href={`#/${selected.slug}/dersler`}
-                  icon="📘"
-                  title="Dersler"
-                  text={lessonText(selected.lessons.length, current?.lessonsDone ?? 0)}
-                  className="lessons"
-                />
+                <HomeButton href={`#/${selected.slug}/dersler`} icon="📘" title="Dersler" className="lessons" />
               )}
-              <HomeButton href={`#/${selected.slug}/analiz`} icon="🔍" title="Analiz" text="Her oyunu ayrıntılı incele" />
+              <HomeButton href={`#/${selected.slug}/analiz`} icon="🔍" title="Analiz" />
               <HomeButton
                 href={`#/${selected.slug}/bulmaca`}
                 icon="🧩"
                 title="Bulmaca"
-                text={current && current.due > 0 ? `Bugün ${current.due} bulmaca seni bekliyor` : 'Kendi hatalarından öğren'}
                 badge={current?.due || undefined}
               />
             </nav>
@@ -259,7 +246,7 @@ function HomeButton({
   href: string
   icon: string
   title: string
-  text: string
+  text?: string
   className?: string
   badge?: number
 }) {
@@ -270,7 +257,7 @@ function HomeButton({
       </span>
       <span className="big-button-text">
         <strong>{title}</strong>
-        <small>{text}</small>
+        {text && <small>{text}</small>}
       </span>
       {badge !== undefined && <span className="count-badge">{badge}</span>}
     </a>
@@ -285,24 +272,53 @@ const PHASE_WHERE: Record<GamePhase, string> = {
   endgame: 'oyun sonunda',
 }
 
-const RESULT_SYMBOL: Record<RecordOutcome, string> = { win: '✓', loss: '✗', draw: '=', unknown: '…' }
-
 const oneDecimal = (value: number) => value.toLocaleString('tr-TR', { maximumFractionDigits: 1 })
-const shortDate = (timestamp: number) => new Date(timestamp).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })
+
+/** Changes every time the app is opened, so "Dikkat et" does not always say the same thing. */
+const VISIT = Math.floor(Math.random() * 1000)
+const pick = <T,>(pool: T[], offset = 0): T => pool[(VISIT + offset) % pool.length]
+
+interface Tip {
+  text: string
+  /** The moment in the analysis the tip is about. */
+  href?: string
+}
 
 /**
- * The player's summary for the selected game: playing level and the bot to play, the part of the
- * game that goes wrong most, what to watch out for, and the latest games (details are in Analiz).
+ * "Dikkat et": the worst error of the latest game (a concrete moment, with its advice), then a tip
+ * for the weakest part of the game and another common error, picked anew on every app opening.
+ */
+function tipsFor(game: GameModule, summary: PlayerSummary): Tip[] {
+  const tips: Tip[] = []
+  const typeOf = (id: string) => game.errorTypes.find((e) => e.id === id)
+  const last = summary.lastMistake
+  if (last) {
+    const type = typeOf(last.errorType)
+    tips.push({
+      text: `Son oyununda ${game.moveTitle(last.ply, last.side, last.label)}: ${type?.label ?? 'hata'}.${type?.tip ? ` ${type.tip}` : ''}`,
+      href: `#/${game.slug}/analiz/${last.gameId}/${last.ply}`,
+    })
+  }
+  if (game.phaseTips) {
+    const phase = summary.weakest ?? pick<GamePhase>(['opening', 'middlegame', 'endgame'], 1)
+    tips.push({ text: pick(game.phaseTips[phase], 2) })
+  }
+  const others = summary.topErrors.map(([id]) => id).filter((id) => id !== last?.errorType)
+  if (others.length > 0) {
+    const tip = typeOf(pick(others, 3))?.tip
+    if (tip && !tips.some((t) => t.text.includes(tip))) tips.push({ text: tip })
+  }
+  return tips.slice(0, 2)
+}
+
+/**
+ * The player's summary for the selected game: points level and the bot to play, the part of the
+ * game that goes wrong most and what to watch out for (each game in detail is in Analiz).
  */
 function PlayerCard({ game, progress, onShowRanks }: { game: GameModule; progress: Progress | null; onShowRanks: () => void }) {
   if (!progress) return <section className="player-card" aria-busy="true" />
   const summary = progress.summary
-  const tips: string[] = []
-  if (summary.weakest && game.phaseTips) tips.push(game.phaseTips[summary.weakest])
-  for (const [type] of summary.topErrors) {
-    const tip = game.errorTypes.find((e) => e.id === type)?.tip
-    if (tip && !tips.includes(tip)) tips.push(tip)
-  }
+  const tips = tipsFor(game, summary)
   const hasPhases = summary.phases.some((p) => p.moves > 0)
   const top = Math.max(1, ...summary.phases.map((p) => p.per10))
   const rank = pointsRank(summary.points, game.id, game.levels)
@@ -330,14 +346,12 @@ function PlayerCard({ game, progress, onShowRanks }: { game: GameModule; progres
           <span className="rank-bar" aria-hidden="true">
             <span style={{ width: `${Math.round(rank.progress * 100)}%` }} />
           </span>
-          <small>{rank.next ? `${rank.next.name} düzeyine ${rank.toNext.toLocaleString('tr-TR')} puan kaldı` : 'En üst düzeydesin!'}</small>
         </button>
         <div className="level-box suggested">
           <span>Sana uygun bot</span>
           <strong>
             {summary.recommended}. seviye · {levelName(game, summary.recommended)}
           </strong>
-          <small>{summary.reason}</small>
         </div>
       </div>
 
@@ -381,38 +395,12 @@ function PlayerCard({ game, progress, onShowRanks }: { game: GameModule; progres
         <div className="player-block player-tips-block">
           <h3>Dikkat et</h3>
           <ul className="player-tips">
-            {tips.slice(0, 2).map((tip) => (
-              <li key={tip}>{tip}</li>
+            {tips.map((tip) => (
+              <li key={tip.text}>{tip.href ? <a href={tip.href}>{tip.text}</a> : tip.text}</li>
             ))}
           </ul>
         </div>
       )}
-
-      <div className="player-block player-recent">
-        <h3>Son oyunların</h3>
-        {summary.recent.length === 0 ? (
-          <p className="muted small">Henüz oyun yok. Oyna düğmesiyle başla!</p>
-        ) : (
-          <ul>
-            {summary.recent.map((g) => (
-              <li key={g.id}>
-                <a href={`#/${game.slug}/analiz/${g.id}`}>
-                  <span className={`result-dot ${g.outcome}`} aria-hidden="true">
-                    {RESULT_SYMBOL[g.outcome]}
-                  </span>
-                  <span className="recent-main">
-                    {OUTCOME_LABELS[g.outcome]} · {g.level !== null ? `${g.level}. seviye (${levelName(game, g.level)})` : 'dışarıdan eklenen oyun'}
-                  </span>
-                  <span className="recent-meta">
-                    <span className={g.points > 0 ? 'up' : g.points < 0 ? 'down' : ''}>{signed(g.points)}</span> ·{' '}
-                    {g.errors !== null ? `${g.errors} hata` : g.analysable ? 'analiz bekliyor' : 'analiz yok'} · {shortDate(g.createdAt)}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </section>
   )
 }
@@ -530,12 +518,6 @@ function InstallCard() {
       )}
     </section>
   )
-}
-
-function lessonText(total: number, done: number): string {
-  if (done === 0) return 'Temel bilgileri adım adım öğren'
-  if (done >= total) return 'Bütün dersleri bitirdin ✓'
-  return `${done} / ${total} ders tamamlandı · devam et`
 }
 
 /** A small window over the home screen (data and backup, installing the app). Esc or the backdrop closes it. */

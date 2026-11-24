@@ -342,18 +342,22 @@ Alıştırmaların doğru cevapları elle yazılmak yerine çoğu zaman oyunun k
   | Reversi | 20 taşa kadar | 16 boş kare ve altı |
 
 - **Bulmaca sayfası:** Önce bugün tekrar edilecek bulmacaların hepsine birden başlayabilirsin. İstersen bir bölüm seçip yalnızca onu çözebilirsin. Bugün tekrarı olmayan bir bölümü seçersen, en yakında tekrarı gelecek bulmacalardan başlanır.
-- Tekrar düzeni aynı: doğru çözdükçe bulmaca üst kutuya çıkar (1, 3, 7, 14, 30 gün), yanlışlar ertesi gün döner.
+- **Çözerken:** Bulmaca yalnızca pozisyonu gösterir ("En iyi hamleyi bul"); oyunda ne oynadığın söylenmez. İstediğin kadar deneyebilirsin: yanlışta tahta geri gelir, **3. yanlıştan sonra ipucu** çıkar. **Çözümü göster** her zaman var.
+- **Bitince:** Üç şey yazar: oyundaki hamlenin neden kötü olduğu, doğru hamlenin ne işe yaradığı ve doğru hamleyle kazanma şansının ne kadar korunduğu ("%88 kalıyordu; oyundaki hamlenle %41'e düştü").
+- Tekrar düzeni aynı: ilk denemede doğru çözdükçe bulmaca üst kutuya çıkar (1, 3, 7, 14, 30 gün); yanlış denemeyle çözülen ya da çözümü gösterilen bulmaca ertesi gün döner.
 - Kayıtların **kalıcı olması için uygulamayı kur** ve oyunlarını orada oyna (bkz. "Uygulama olarak kurmak"). Arada bir **Yedekle** düğmesiyle yedek almayı da unutma.
 
 ## Ana ekran
 Ana ekran her pencere boyutunda (telefon dahil) tek ekrana sığar, aşağı yukarı kaydırma gerekmez. Üstte oyun sekmeleri, solda büyük yeşil **Oyna** düğmesi ve altında **Dersler**, **Analiz**, **Bulmaca** düğmeleri, sağda **oyuncu özeti** vardır (telefonda özet düğmelerin altındadır ve kısadır).
 
 **Oyuncu özeti** (seçili oyun için):
-- **Oynayış düzeyin:** Son 10 oyunun bilgisayara karşı sonuçlarından hangi seviyedeki bot gibi oynadığın. Bir seviyeyi yenmek seni o seviyenin bir üstüne, ona yenilmek bir altına koyar; ortalaması alınır. Puan değil, bot seviyesi gösterilir.
+- **Puan düzeyin:** Puanının denk geldiği düzey ve bir sonrakine doğru dolan çubuk. Dokununca bütün düzeyler ve senin yerin açılır.
 - **Sana uygun bot:** Aynı seviyede son 3 oyunun 2'sini kazandıysan bir üst seviye, 2'sini kaybettiysen bir alt seviye, yoksa aynı seviye önerilir. Oyna ekranında bu seviyenin yanında "Sana uygun" yazar.
 - **Oyunun aşamaları:** Son 10 analiz edilmiş oyunda oyun başı, ortası ve sonunda 10 hamlede kaç hata ve büyük hata yaptığın; en zor aşama turuncu gösterilir.
-- **Dikkat et:** En zor aşaman ve en sık hata türün için kısa birer öğüt.
-- **Son oyunların:** Sonuç, botun seviyesi, hata sayısı ve tarih. Birine dokununca o oyunun ayrıntılı analizi açılır. **Verilerin** (yedekleme) ve **Uygulamayı kur** alttaki küçük düğmelerle açılan pencerelerdedir.
+- **Dikkat et:** Son oyunundaki en büyük hatan (hangi hamle olduğu ve ne yapman gerektiği; dokununca analizde o an açılır), ve en zor aşaman ya da sık yaptığın başka bir hata için bir öğüt. Öğütler her oyunda her aşama için birkaç tanedir ve uygulama her açıldığında başka biri seçilir. Telefonda biri gösterilir.
+- Her oyunun ayrıntısı **Analiz**'dedir. **Verilerin** (yedekleme) ve **Uygulamayı kur** alttaki küçük düğmelerle açılan pencerelerdedir.
+
+**Hız:** Özet, bütün oyunların analizinden hesaplanır; bu, bir oyunun analizi bitince bir kez yapılır ve saklanır. Ana ekran açılırken saklanan özet kullanılır, yeni bir oyun gelmedikçe baştan hesaplanmaz. Google eşitlemesi de yalnızca uygulama açılınca ve her kayıttan sonra yapılır, ana ekrana her dönüşte yapılmaz.
 
 **Oyunlar arasında geçiş:** Bilgisayarda **← →** ok tuşları oyunu değiştirir (sondan başa döner), **Enter** seçili oyunu açar; telefonda ekranı sağa ya da sola kaydırmak yeter. İçerik yerinde kalır, yalnızca renkler yumuşakça değişir.
 

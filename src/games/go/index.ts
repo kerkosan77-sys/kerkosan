@@ -145,9 +145,24 @@ export const goModule: GameModule<GoState> = {
   compareAfterBest: true,
   analysisRevision: 1,
   phaseTips: {
-    opening: 'Önce köşelere, sonra kenarlara oyna.',
-    middlegame: 'Zayıf gruplarını güçlendir, rakibin zayıf gruplarına saldır.',
-    endgame: 'Sınırları kapat; açık nokta kalmayınca pas geç.',
+    opening: [
+      'Önce köşelere, sonra kenarlara oyna.',
+      'Tek bir yerde çok taş yığma; tahtanın farklı bölgelerinde yer edin.',
+      'İlk hamlelerde en dış iki çizgiye oynama; orada alan küçük kalır.',
+      'Rakibin taşına hemen yapışma; önce kendi alanını kur.',
+    ],
+    middlegame: [
+      'Zayıf gruplarını güçlendir, rakibin zayıf gruplarına saldır.',
+      'Nefesi az kalan grubunu önce kurtar, sonra saldır.',
+      'Ayrı duran gruplarını birbirine bağlamaya çalış.',
+      'Rakibin iki zayıf grubunu aynı anda sıkıştıran noktaları ara.',
+    ],
+    endgame: [
+      'Sınırları kapat; açık nokta kalmayınca pas geç.',
+      'Önce büyük sınırları kapat, küçükleri sonra.',
+      'Kendi alanının içine boşuna taş koyma.',
+      'Pas geçmeden önce açık kalan sınır var mı bak.',
+    ],
   },
   errorTypes: [
     { id: 'lost_group', label: 'Taşlarını yakalatma', tip: 'Taşlarının nefeslerini say; tek nefesi kalan gruplarını kurtar.' },

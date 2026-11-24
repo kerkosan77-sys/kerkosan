@@ -149,9 +149,24 @@ export const mangalaModule: GameModule<MangalaState> = {
   defaultLevel: 3,
   analysisDepth: 14,
   phaseTips: {
-    opening: 'İlk hamlelerde tekrar oynama fırsatlarını kullan.',
-    middlegame: 'Rakibin çift ve boş kuyu tehditlerine karşı kuyularını koru.',
-    endgame: 'Kalan taşları say, kuyularının ne zaman boşalacağını hesapla.',
+    opening: [
+      'İlk hamlelerde tekrar oynama fırsatlarını kullan.',
+      'Hamleden önce son taşın nereye düşeceğini say.',
+      'Son taşı hazineye düşen kuyuları, başka hamleden önce oyna.',
+      'Çok taşlı kuyunu erken boşaltma; taşların rakibin tarafına geçer.',
+    ],
+    middlegame: [
+      'Rakibin çift ve boş kuyu tehditlerine karşı kuyularını koru.',
+      'Rakibin tek sayıda taş olan kuyularını bul: son taşınla çift yapıp alabilirsin.',
+      'Son taşı kendi boş kuyuna düşürüp karşıdaki taşları almayı ara.',
+      'Hamleden sonra rakibin hangi kuyuna dokunabileceğine bak.',
+    ],
+    endgame: [
+      'Kalan taşları say, kuyularının ne zaman boşalacağını hesapla.',
+      'Kendi tarafı önce boşalan, rakibin kalan taşlarını kazanır: bunu hesaba kat.',
+      'Taşlar azaldıkça her hamlenin sonunu tek tek say.',
+      'Hazinende 24\'ten fazla taş varsa oyunu kazandın; riske girme.',
+    ],
   },
   errorTypes: [
     { id: 'allowed_capture', label: 'Rakibe taş kaptırma', tip: 'Kuyularında tek sayıda taş bırakma: rakip onları çift yapıp alabilir.' },

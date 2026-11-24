@@ -143,9 +143,24 @@ export const reversiModule: GameModule<ReversiState> = {
   defaultLevel: 3,
   analysisDepth: 7,
   phaseTips: {
-    opening: 'Az taş çevir, ortada kal.',
-    middlegame: 'Köşeleri koru, rakibe az seçenek bırak.',
-    endgame: 'Taşları say ve sona kadar hesapla.',
+    opening: [
+      'Az taş çevir, ortada kal.',
+      'Kenarlara erken gitme; ortadaki küçük alanda kal.',
+      'Rakibe az hamle seçeneği bırakan hamleleri ara.',
+      'Çok taş çevirmek her zaman iyi değil; az ama güvenli çevir.',
+    ],
+    middlegame: [
+      'Köşeleri koru, rakibe az seçenek bırak.',
+      'Köşenin hemen yanındaki karelere oynama; rakibe köşeyi açar.',
+      'Kenar boyunca tek başına taş bırakma.',
+      'Rakibin hamle sayısını azaltan hamleler seni öne geçirir.',
+    ],
+    endgame: [
+      'Taşları say ve sona kadar hesapla.',
+      'Köşeler ve kenarlar artık çok değerli: fırsat bulunca al.',
+      'Son boş karelerde sıranın kimde olacağını hesapla.',
+      'Rakibini pas geçmeye zorlayacak hamleleri ara.',
+    ],
   },
   errorTypes: [
     { id: 'gave_corner', label: 'Rakibe köşe verme', tip: 'Boş köşenin yanındaki karelere (özellikle çaprazdakine) oynama.' },
