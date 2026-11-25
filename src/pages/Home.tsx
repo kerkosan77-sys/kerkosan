@@ -15,7 +15,7 @@ import {
   useCloudState,
   type SyncResult,
 } from '../core/cloud'
-import { canPromptInstall, isInstalledApp, onInstallChange, promptInstall } from '../core/install'
+import { canPromptInstall, installPlatform, isInstalledApp, offlineReady, onInstallChange, promptInstall } from '../core/install'
 import { cachedProgress, loadProgress, type Progress } from '../core/stats/homeCache'
 import type { PlayerSummary } from '../core/stats/player'
 import { MOVE_POINTS, RESULT_POINTS, signed } from '../core/stats/points'
@@ -216,7 +216,15 @@ export default function Home() {
           💾 Verilerin
         </button>
         {!isInstalledApp() && (
-          <button type="button" className="btn subtle footer-btn" onClick={() => setPanel('install')}>
+          <button
+            type="button"
+            className="btn subtle footer-btn"
+            onClick={() => {
+              // When the browser allows it, the install starts right away; otherwise the steps open.
+              if (canPromptInstall()) void promptInstall()
+              else setPanel('install')
+            }}
+          >
             <span className="label-long">⬇ Uygulamayı kur</span>
             <span className="label-short">⬇ Kur</span>
           </button>
@@ -493,12 +501,14 @@ function InstallCard() {
       </section>
     )
   }
+  const platform = installPlatform(navigator.userAgent, navigator.maxTouchPoints)
   return (
     <section className="install-card">
       <h2>Uygulama olarak kur</h2>
       <p className="muted small">
-        Şu an tarayıcıda açıksın. Uygulama olarak kurarsan masaüstünde simgesi olur, internetsiz açılır ve oyunların, bulmacaların
-        kalıcı olarak saklanır.
+        Şu an tarayıcıda açıksın. Kurarsan {platform === 'desktop' ? 'masaüstünde' : 'telefonun ana ekranında'} simgesi olur, tarayıcı
+        olmadan tam ekran açılır ve <strong>internet olmadan da çalışır</strong>: bütün oyunlar ve satranç motoru bu cihaza kaydedilir.
+        İnternet yalnızca Google ile eşitleme için gerekir.
       </p>
       {canPromptInstall() ? (
         <button
@@ -511,13 +521,64 @@ function InstallCard() {
           Uygulamayı kur
         </button>
       ) : (
-        <p className="small">
-          Kurmak için adres çubuğundaki <strong>yükle</strong> simgesine bas. Edge'de: <strong>⋯ → Uygulamalar → Bu siteyi uygulama
-          olarak yükle</strong>.
-        </p>
+        <InstallSteps platform={platform} />
       )}
+      <OfflineStatus />
     </section>
   )
+}
+
+/** How to install by hand, for the device in hand. */
+function InstallSteps({ platform }: { platform: ReturnType<typeof installPlatform> }) {
+  if (platform === 'ios') {
+    return (
+      <ol className="install-steps small">
+        <li>
+          Bu sayfayı <strong>Safari</strong>'de aç (WhatsApp gibi başka bir uygulamanın içindeysen "Safari'de aç" de).
+        </li>
+        <li>
+          Alttaki <strong>Paylaş</strong> düğmesine bas (kare ve yukarı ok).
+        </li>
+        <li>
+          <strong>Ana Ekrana Ekle</strong>'yi seç, sonra <strong>Ekle</strong>'ye bas.
+        </li>
+      </ol>
+    )
+  }
+  if (platform === 'android') {
+    return (
+      <ol className="install-steps small">
+        <li>
+          Bu sayfayı <strong>Chrome</strong>'da aç (WhatsApp gibi başka bir uygulamanın içindeysen menüden "Chrome'da aç" de).
+        </li>
+        <li>
+          Sağ üstteki <strong>⋮</strong> menüsüne bas.
+        </li>
+        <li>
+          <strong>Uygulamayı yükle</strong>'yi (ya da <strong>Ana ekrana ekle</strong>'yi) seç, sonra <strong>Yükle</strong>'ye bas.
+        </li>
+      </ol>
+    )
+  }
+  return (
+    <p className="small">
+      Kurmak için adres çubuğundaki <strong>yükle</strong> simgesine bas. Edge'de: <strong>⋯ → Uygulamalar → Bu siteyi uygulama olarak
+      yükle</strong>.
+    </p>
+  )
+}
+
+/** Whether this device already keeps the app's files, so it opens without internet. */
+function OfflineStatus() {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    let alive = true
+    void offlineReady().then((ok) => alive && setReady(ok))
+    return () => {
+      alive = false
+    }
+  }, [])
+  return ready ? <p className="small ok-text offline-ready">✓ Bu cihazda internetsiz kullanıma hazır.</p> : null
 }
 
 /** A small window over the home screen (data and backup, installing the app). Esc or the backdrop closes it. */

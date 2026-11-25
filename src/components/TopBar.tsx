@@ -10,8 +10,8 @@ interface TopBarProps {
 export default function TopBar({ title, backTo = '', backLabel = 'Ana ekran' }: TopBarProps) {
   return (
     <header className="top-bar">
-      <a className="back-link" href={`#/${backTo}`}>
-        <span aria-hidden="true">←</span> {backLabel}
+      <a className="back-link" href={`#/${backTo}`} aria-label={backLabel}>
+        <span aria-hidden="true">←</span> <span className="back-link-label">{backLabel}</span>
       </a>
       <h1>{title}</h1>
       <span className="top-bar-tools">

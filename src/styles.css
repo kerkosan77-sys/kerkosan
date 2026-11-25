@@ -127,6 +127,32 @@ h3 {
 .top-bar h1 {
   margin: 0;
   font-size: 1.3rem;
+  /* A long title is shortened with "…" instead of pushing the buttons off the screen. */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-bar .back-link,
+.top-bar .top-bar-tools {
+  flex: none;
+}
+
+/* Narrow screens (also phones with a larger display or text size): the back button shows only its arrow. */
+@media (max-width: 380px) {
+  .top-bar {
+    gap: 8px;
+  }
+
+  .top-bar h1 {
+    font-size: 1.1rem;
+  }
+
+  .back-link-label {
+    display: none;
+  }
 }
 
 .back-link {
@@ -1149,6 +1175,20 @@ button.level-box:hover,
   color: var(--good);
 }
 
+.install-steps {
+  margin: 8px 0;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+
+.install-steps li + li {
+  margin-top: 4px;
+}
+
+.offline-ready {
+  margin: 10px 0 0;
+}
+
 .install-card {
   margin-top: 14px;
   padding: 16px 18px;
@@ -1273,7 +1313,8 @@ button.level-box:hover,
 
 .segmented {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0, …): the three choices share the width even when a label is long. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
@@ -1282,6 +1323,9 @@ button.level-box:hover,
 
 .segmented button {
   min-height: 44px;
+  padding: 6px 4px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
   border: 0;
   border-radius: 9px;
   background: transparent;
@@ -1333,6 +1377,7 @@ button.level-box:hover,
 /* Lessons */
 .lesson-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   max-width: 640px;
   margin: 0 auto;
@@ -1353,6 +1398,7 @@ button.level-box:hover,
 
 .lesson-level {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -1413,6 +1459,9 @@ button.level-box:hover,
   display: grid;
   gap: 2px;
   flex: 1 1 auto;
+  /* Long lesson names wrap instead of pushing the card wider than the screen. */
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .lesson-text strong {
@@ -1431,6 +1480,18 @@ button.level-box:hover,
   font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* Narrow screens: the lesson's picture gives way to its name. */
+@media (max-width: 330px) {
+  .lesson-card {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .lesson-icon {
+    display: none;
+  }
 }
 
 .lesson-chip.done {
@@ -3745,5 +3806,51 @@ textarea:focus {
   .game-tabs button {
     gap: 6px;
     padding: 6px 4px;
+  }
+}
+
+/*
+ * Phones with a larger display or text size (Android then zooms pages in, so there is less room than
+ * the screen's real size) and phones held sideways: the home screen cannot fit on one screen without
+ * squeezing the cards until their content is cut off, so it becomes an ordinary page that scrolls a
+ * little, with every part at its full size. Normal phones and computers keep the one-screen layout.
+ */
+@media (max-width: 330px), (max-height: 600px) and (max-width: 900px) {
+  .home-screen {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-y: visible;
+  }
+
+  .home-main {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .home-screen .home-buttons {
+    grid-auto-rows: auto;
+  }
+
+  .home-screen .big-button {
+    overflow: visible;
+    min-height: 64px;
+  }
+
+  .player-card {
+    flex: none;
+    overflow: visible;
+  }
+
+  /* With room to scroll, nothing has to be cut short. */
+  .player-tips-block h3 {
+    display: block;
+  }
+
+  .player-tips li {
+    display: list-item;
+    overflow: visible;
+    -webkit-line-clamp: unset;
   }
 }

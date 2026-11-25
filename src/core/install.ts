@@ -28,7 +28,25 @@ export function listenForInstall(): void {
 
 /** True when running as the installed app (its own window), not in a browser tab. */
 export function isInstalledApp(): boolean {
-  return typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches ?? false)
+  if (typeof window === 'undefined') return false
+  // iPhone and iPad tell it with navigator.standalone instead.
+  return (window.matchMedia?.('(display-mode: standalone)').matches ?? false) || (navigator as { standalone?: boolean }).standalone === true
+}
+
+export type InstallPlatform = 'ios' | 'android' | 'desktop'
+
+/** Which install steps to show: iPhone/iPad (Safari), Android (Chrome) or a computer. */
+export function installPlatform(userAgent: string, touchPoints = 0): InstallPlatform {
+  // iPads ask for the desktop site and say "Macintosh", but they have a touch screen.
+  if (/iPad|iPhone|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && touchPoints > 1)) return 'ios'
+  if (/Android/.test(userAgent)) return 'android'
+  return 'desktop'
+}
+
+/** Resolves once the app's files are kept on this device, so it opens without internet. */
+export function offlineReady(): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker) return Promise.resolve(false)
+  return navigator.serviceWorker.ready.then(() => true).catch(() => false)
 }
 
 /** True when the browser offered an install button for this page. */

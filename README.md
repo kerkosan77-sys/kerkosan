@@ -59,13 +59,17 @@ Terminalde çıkan adresi tarayıcıda aç: **http://localhost:5173**
 
 Durdurmak için terminalde `Ctrl + C`.
 
-### Telefonda kullanmak
+### Telefonda kullanmak (önerilen: uygulama olarak kur)
 
-1. Bilgisayar ve telefon aynı Wi-Fi ağında olsun.
-2. `npm run dev` çalışırken terminalde `Network:` ile başlayan satırdaki adresi bul (örneğin `http://192.168.1.20:5173`).
-3. Bu adresi telefonun tarayıcısına yaz.
+Uygulama internette: **https://kerkosan77-sys.github.io/kerkosan/**. Bir kez kurunca telefonda gerçek bir uygulama gibi durur ve **internet olmadan da çalışır**; bütün oyunlar ve satranç motoru ilk açılışta telefona kaydedilir. İnternet yalnızca Google ile eşitleme ve güncellemeler için gerekir (güncellemeler internet varken kendiliğinden gelir).
 
-> Telefondaki veriler telefonun tarayıcısında, bilgisayardakiler bilgisayarınkinde ayrı ayrı saklanır.
+- **Android:** Adresi **Chrome**'da aç → ana ekrandaki **⬇ Kur** düğmesine bas; tarayıcı izin veriyorsa kurulum hemen başlar. Başlamazsa açılan pencere adımları gösterir (Chrome menüsü **⋮ → Uygulamayı yükle** ya da **Ana ekrana ekle**).
+- **iPhone / iPad:** Adresi **Safari**'de aç → **Paylaş** (kare ve yukarı ok) → **Ana Ekrana Ekle**.
+- Link WhatsApp gibi bir uygulamanın içinde açıldıysa önce "Chrome'da aç" / "Safari'de aç" de.
+
+Kur penceresinde "✓ Bu cihazda internetsiz kullanıma hazır" yazıyorsa her şey telefona kaydedilmiştir.
+
+**Geliştirme sırasında** bilgisayardaki sürümü telefonda denemek için: bilgisayar ve telefon aynı Wi-Fi'de olsun, `npm run dev` çalışırken terminaldeki `Network:` adresini (örneğin `http://192.168.1.20:5173`) telefonun tarayıcısına yaz. Telefondaki veriler telefonda, bilgisayardakiler bilgisayarda ayrı saklanır (Google ile eşitleme bunları birleştirir).
 
 ## En kolay yol: çift tıkla
 
@@ -348,7 +352,7 @@ Alıştırmaların doğru cevapları elle yazılmak yerine çoğu zaman oyunun k
 - Kayıtların **kalıcı olması için uygulamayı kur** ve oyunlarını orada oyna (bkz. "Uygulama olarak kurmak"). Arada bir **Yedekle** düğmesiyle yedek almayı da unutma.
 
 ## Ana ekran
-Ana ekran her pencere boyutunda (telefon dahil) tek ekrana sığar, aşağı yukarı kaydırma gerekmez. Üstte oyun sekmeleri, solda büyük yeşil **Oyna** düğmesi ve altında **Dersler**, **Analiz**, **Bulmaca** düğmeleri, sağda **oyuncu özeti** vardır (telefonda özet düğmelerin altındadır ve kısadır).
+Ana ekran her pencere boyutunda (telefon dahil) tek ekrana sığar, aşağı yukarı kaydırma gerekmez. Telefonda ekran ya da yazı boyutu büyütülmüşse (Android o zaman sayfaları da büyütür) ya da telefon yan tutuluyorsa, hiçbir şey kesilip daralmasın diye ana ekran hafifçe kayan normal bir sayfaya döner. Diğer sayfalar da büyütülmüş ekranda yana taşmaz: dar ekranda geri düğmesi yalnızca ← olur, uzun başlıklar "…" ile kısalır. Üstte oyun sekmeleri, solda büyük yeşil **Oyna** düğmesi ve altında **Dersler**, **Analiz**, **Bulmaca** düğmeleri, sağda **oyuncu özeti** vardır (telefonda özet düğmelerin altındadır ve kısadır).
 
 **Oyuncu özeti** (seçili oyun için):
 - **Puan düzeyin:** Puanının denk geldiği düzey ve bir sonrakine doğru dolan çubuk. Dokununca bütün düzeyler ve senin yerin açılır.
