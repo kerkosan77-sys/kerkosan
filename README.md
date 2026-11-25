@@ -63,7 +63,7 @@ Durdurmak için terminalde `Ctrl + C`.
 
 Uygulama internette: **https://kerkosan77-sys.github.io/kerkosan/**. Bir kez kurunca telefonda gerçek bir uygulama gibi durur ve **internet olmadan da çalışır**; bütün oyunlar ve satranç motoru ilk açılışta telefona kaydedilir. İnternet yalnızca Google ile eşitleme ve güncellemeler için gerekir (güncellemeler internet varken kendiliğinden gelir).
 
-- **Android:** Adresi **Chrome**'da aç → ana ekrandaki **⬇ Kur** düğmesine bas; tarayıcı izin veriyorsa kurulum hemen başlar. Başlamazsa açılan pencere adımları gösterir (Chrome menüsü **⋮ → Uygulamayı yükle** ya da **Ana ekrana ekle**).
+- **Android:** Adresi **Chrome**'da aç → ana ekrandaki **⬇ Kur** düğmesine bas; tarayıcı izin veriyorsa kurulum hemen başlar. Başlamazsa açılan pencere adımları gösterir (Chrome menüsü **⋮ → Uygulamayı yükle** ya da **Ana ekrana ekle → Yükle**; **Kısayol** uygulamayı kurmaz). Sayfa Google uygulaması ya da WhatsApp gibi başka bir uygulamanın içinde açıldıysa oradan yalnızca simgesiz bir kısayol eklenebilir; Kur penceresi bunu söyler ve **Chrome'da aç** düğmesini gösterir.
 - **iPhone / iPad:** Adresi **Safari**'de aç → **Paylaş** (kare ve yukarı ok) → **Ana Ekrana Ekle**.
 - Link WhatsApp gibi bir uygulamanın içinde açıldıysa önce "Chrome'da aç" / "Safari'de aç" de.
 

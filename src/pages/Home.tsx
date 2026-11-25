@@ -15,7 +15,16 @@ import {
   useCloudState,
   type SyncResult,
 } from '../core/cloud'
-import { canPromptInstall, installPlatform, isInstalledApp, offlineReady, onInstallChange, promptInstall } from '../core/install'
+import {
+  canPromptInstall,
+  chromeLink,
+  installPlatform,
+  isAndroidChrome,
+  isInstalledApp,
+  offlineReady,
+  onInstallChange,
+  promptInstall,
+} from '../core/install'
 import { cachedProgress, loadProgress, type Progress } from '../core/stats/homeCache'
 import type { PlayerSummary } from '../core/stats/player'
 import { MOVE_POINTS, RESULT_POINTS, signed } from '../core/stats/points'
@@ -546,16 +555,38 @@ function InstallSteps({ platform }: { platform: ReturnType<typeof installPlatfor
     )
   }
   if (platform === 'android') {
+    if (!isAndroidChrome(navigator.userAgent)) {
+      // The Google app, WhatsApp and the like: from here only a shortcut without the app's icon can be made.
+      return (
+        <>
+          <p className="warning-note">
+            Sayfa şu an Chrome'da değil, başka bir uygulamanın (örneğin Google uygulamasının) içinde açık. Buradan ana ekrana eklersen
+            uygulama kurulmaz, yalnızca simgesiz bir kısayol olur.
+          </p>
+          <a className="btn primary install-chrome" href={chromeLink(location.href)}>
+            Chrome'da aç
+          </a>
+          <ol className="install-steps small">
+            <li>
+              Chrome'da açılan sayfada alttaki <strong>⬇&nbsp;Kur</strong>'a bas, sonra <strong>Yükle</strong>'ye bas.
+            </li>
+            <li>
+              Düğme Chrome'u açmazsa sağ üstteki menüden <strong>Chrome'da aç</strong>'ı seç ya da Chrome'a bu adresi yaz:{' '}
+              <strong className="install-address">{location.host + location.pathname}</strong>
+            </li>
+          </ol>
+          <p className="small muted">Daha önce simgesiz bir kısayol oluştuysa onu silebilirsin.</p>
+        </>
+      )
+    }
     return (
       <ol className="install-steps small">
         <li>
-          Bu sayfayı <strong>Chrome</strong>'da aç (WhatsApp gibi başka bir uygulamanın içindeysen menüden "Chrome'da aç" de).
+          Sağ üstteki <strong>⋮</strong> menüsüne bas (menüde <strong>Chrome'da aç</strong> görürsen önce ona bas).
         </li>
         <li>
-          Sağ üstteki <strong>⋮</strong> menüsüne bas.
-        </li>
-        <li>
-          <strong>Uygulamayı yükle</strong>'yi (ya da <strong>Ana ekrana ekle</strong>'yi) seç, sonra <strong>Yükle</strong>'ye bas.
+          <strong>Uygulamayı yükle</strong>'yi (ya da <strong>Ana ekrana ekle → Yükle</strong>'yi) seç. <strong>Kısayol</strong>'u seçme:
+          o, uygulamayı kurmaz.
         </li>
       </ol>
     )

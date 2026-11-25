@@ -1189,6 +1189,18 @@ button.level-box:hover,
   margin: 10px 0 0;
 }
 
+.install-chrome {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 4px;
+  text-decoration: none;
+}
+
+.install-address {
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
 .install-card {
   margin-top: 14px;
   padding: 16px 18px;

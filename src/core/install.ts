@@ -43,6 +43,26 @@ export function installPlatform(userAgent: string, touchPoints = 0): InstallPlat
   return 'desktop'
 }
 
+/**
+ * On Android: true for Chrome itself. False inside other apps (the Google app, WhatsApp, Instagram…)
+ * and in other browsers: there "add to home screen" makes only a plain shortcut, not the app.
+ */
+export function isAndroidChrome(userAgent: string): boolean {
+  if (!/Android/.test(userAgent) || !/Chrome\/\d/.test(userAgent)) return false
+  // "; wv)" and "Version/4.0" mark a web view inside another app; the rest are other browsers and apps.
+  return !/; wv\)|Version\/\d|GSA\/|SamsungBrowser|EdgA|OPR\/|Firefox|YaBrowser|UCBrowser|MiuiBrowser|HeyTapBrowser|VivoBrowser|HuaweiBrowser|DuckDuckGo|FBAN|FBAV|Instagram|Line\/|MicroMessenger|Snapchat|TikTok|musical_ly|Twitter/.test(
+    userAgent,
+  )
+}
+
+/** A link that opens the app's start page in Chrome on Android (or the page itself where that is not possible). */
+export function chromeLink(pageUrl: string): string {
+  const url = new URL(pageUrl)
+  const start = url.origin + url.pathname
+  const scheme = url.protocol.replace(':', '')
+  return `intent://${url.host}${url.pathname}#Intent;scheme=${scheme};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(start)};end`
+}
+
 /** Resolves once the app's files are kept on this device, so it opens without internet. */
 export function offlineReady(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !navigator.serviceWorker) return Promise.resolve(false)
