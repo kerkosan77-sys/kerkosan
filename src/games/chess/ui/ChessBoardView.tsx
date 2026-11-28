@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useCallback, useMemo, useRef, type CSSProperties } from 'react'
 import type { Arrow } from 'react-chessboard'
 import type { BoardMark, BoardProps, Side } from '../../../core/types'
 import ChessBoard from './ChessBoard'
@@ -18,17 +18,31 @@ const squaresOf = (uci: string) => ({ from: uci.slice(0, 2), to: uci.slice(2, 4)
 
 /** The chess board behind the shared board interface (move codes are UCI). */
 export default function ChessBoardView({ position, perspective, interactive, onMove, lastMove, marks = [], id }: BoardProps) {
-  const arrows: Arrow[] = []
-  const squareStyles: Record<string, CSSProperties> = {}
-  for (const mark of marks) {
-    const color = ARROW_COLORS[mark.kind]
-    if (mark.move && color) {
-      const { from, to } = squaresOf(mark.move)
-      arrows.push({ startSquare: from, endSquare: to, color })
+  // Props that stay the same from one redraw to the next, so the board itself is not drawn again.
+  const marksKey = JSON.stringify(marks)
+  const { arrows, squareStyles } = useMemo(() => {
+    const arrows: Arrow[] = []
+    const squareStyles: Record<string, CSSProperties> = {}
+    for (const mark of marks) {
+      const color = ARROW_COLORS[mark.kind]
+      if (mark.move && color) {
+        const { from, to } = squaresOf(mark.move)
+        arrows.push({ startSquare: from, endSquare: to, color })
+      }
+      const style = SQUARE_STYLES[mark.kind]
+      if (mark.square && style) squareStyles[mark.square] = { ...squareStyles[mark.square], ...style }
     }
-    const style = SQUARE_STYLES[mark.kind]
-    if (mark.square && style) squareStyles[mark.square] = { ...squareStyles[mark.square], ...style }
-  }
+    return { arrows, squareStyles }
+    // marksKey stands for the marks' content.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marksKey])
+  const last = useMemo(() => (lastMove ? squaresOf(lastMove) : null), [lastMove])
+  const onMoveRef = useRef(onMove)
+  onMoveRef.current = onMove
+  const handleMove = useCallback(
+    (move: { from: string; to: string; promotion?: string }) => onMoveRef.current?.(`${move.from}${move.to}${move.promotion ?? ''}`) ?? false,
+    [],
+  )
   const turn = (position.split(' ')[1] === 'b' ? 'b' : 'w') as Side
 
   return (
@@ -37,8 +51,8 @@ export default function ChessBoardView({ position, perspective, interactive, onM
       fen={position}
       orientation={perspective === 'w' ? 'white' : 'black'}
       movableColor={interactive ? turn : null}
-      onMove={(move) => onMove?.(`${move.from}${move.to}${move.promotion ?? ''}`) ?? false}
-      lastMove={lastMove ? squaresOf(lastMove) : null}
+      onMove={handleMove}
+      lastMove={last}
       arrows={arrows}
       squareStyles={squareStyles}
     />

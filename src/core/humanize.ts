@@ -26,6 +26,48 @@ export interface Humanize {
   randomMoveChance: number
 }
 
+/**
+ * A computer level: how far it looks and how it errs. The numbers of every game's levels were found
+ * by training (scripts/train-bots): the bots played thousands of games against each other until
+ * each level was stronger than the one below by a steady margin.
+ */
+export interface BotStyle {
+  /** Search depth in the game's own units. */
+  depth: number
+  /** Chance of looking one step deeper on a move: a strength between two depths. */
+  deeper?: number
+  /** Missing: always the engine's choice. */
+  humanize?: Humanize
+}
+
+/** The depth to search for one move (one deeper now and then, see BotStyle.deeper). */
+export function depthFor(style: BotStyle, random: () => number = Math.random): number {
+  return style.depth + (style.deeper && random() < style.deeper ? 1 : 0)
+}
+
+/**
+ * The computer's move at a level, given the game's search. A careless move (randomMoveChance) is
+ * picked before searching, so it costs nothing.
+ */
+export async function botMove(
+  style: BotStyle,
+  legalMoves: string[],
+  search: (depth: number, multiPV: number) => EngineLine[] | Promise<EngineLine[]>,
+  random: () => number = Math.random,
+): Promise<string | null> {
+  if (legalMoves.length === 0) return null
+  if (legalMoves.length === 1) return legalMoves[0]
+  const humanize = style.humanize
+  if (humanize && humanize.randomMoveChance > 0 && random() < humanize.randomMoveChance) {
+    return legalMoves[Math.floor(random() * legalMoves.length)] ?? legalMoves[0]
+  }
+  const depth = depthFor(style, random)
+  const lines = await search(depth, humanize ? humanize.multiPV : 1)
+  const best = lines.find((line) => line.pv[0] && legalMoves.includes(line.pv[0]))?.pv[0] ?? legalMoves[0]
+  if (!humanize) return best
+  return pickHumanMove(lines, legalMoves, { ...humanize, randomMoveChance: 0 }, random) ?? best
+}
+
 /** Picks a move from the engine's candidate lines. Pure (randomness injected) so it can be tested. */
 export function pickHumanMove(
   lines: EngineLine[],

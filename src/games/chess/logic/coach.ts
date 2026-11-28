@@ -51,7 +51,8 @@ export function chessCoachTip(fen: string): string {
   const me = chess.turn()
   const enemy: Color = me === 'w' ? 'b' : 'w'
   if (chess.inCheck()) return 'Şah! Önce şahını kurtarmalısın.'
-  if (chess.moves({ verbose: true }).some((move) => move.san.endsWith('#'))) return 'Bu pozisyonda mat var! Bulabilir misin?'
+  // Plain move names: the detailed list is much slower in chess.js and only "#" is needed here.
+  if (chess.moves().some((san) => san.endsWith('#'))) return 'Bu pozisyonda mat var! Bulabilir misin?'
   if (findHangingPieces(fen, me, 1).length > 0) return 'Bir taşın tehlikede. Önce onu kurtar ya da koru.'
   if (findHangingPieces(fen, enemy, 1).length > 0) return 'Rakibin korumasız bir taşı var. Bulabilir misin?'
   if (Number(fen.split(' ')[5] ?? 1) <= 8) return 'Taşlarını oyuna sok, merkezi tut ve rok yap.'

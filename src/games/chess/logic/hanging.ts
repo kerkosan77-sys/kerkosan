@@ -43,17 +43,31 @@ export function staticExchange(fen: string, square: Square, by: Color): number {
 
   const gain: number[] = []
   let victim = PIECE_VALUE[target.type]
+  let side = by
+  const lastRank = square[1] === '1' || square[1] === '8'
   for (let depth = 0; depth < 32; depth++) {
-    const captures = chess
-      .moves({ verbose: true })
-      .filter((move) => move.to === square && (!move.promotion || move.promotion === 'q'))
-    if (captures.length === 0) break
-    captures.sort((a, b) => PIECE_VALUE[a.piece] - PIECE_VALUE[b.piece])
-    const capture = captures[0]
-    // A king may only capture when nothing can recapture; legal move generation guarantees that.
+    // Only the pieces attacking the square are tried, cheapest first. (Listing every legal move
+    // instead is slow in chess.js: each listed move works out all legal moves again, and that
+    // made the coach's check freeze phones for about a second.)
+    const attackers = chess
+      .attackers(square, side)
+      .map((from) => ({ from, piece: chess.get(from)!.type }))
+      .sort((a, b) => PIECE_VALUE[a.piece] - PIECE_VALUE[b.piece])
+    let captured: PieceSymbol | null = null
+    for (const { from, piece } of attackers) {
+      try {
+        // Illegal captures (a pinned piece, a king walking into a defended square) throw.
+        chess.move({ from, to: square, ...(piece === 'p' && lastRank ? { promotion: 'q' } : {}) })
+        captured = piece === 'p' && lastRank ? 'q' : piece
+        break
+      } catch {
+        // Not legal: the next attacker.
+      }
+    }
+    if (!captured) break
     gain[depth] = victim - (depth > 0 ? gain[depth - 1] : 0)
-    victim = capture.promotion ? PIECE_VALUE.q : PIECE_VALUE[capture.piece]
-    chess.move({ from: capture.from, to: capture.to, promotion: capture.promotion })
+    victim = PIECE_VALUE[captured]
+    side = opposite(side)
   }
   if (gain.length === 0) return 0
   for (let i = gain.length - 1; i > 0; i--) {
@@ -105,7 +119,7 @@ export interface LeftHanging {
  */
 export function detectLeftHanging(
   fenBefore: string,
-  move: { from: string; to: string; promotion?: string },
+  move: string | { from: string; to: string; promotion?: string },
   minNetLoss = 2,
 ): LeftHanging | null {
   const chess = load(fenBefore)
@@ -139,15 +153,20 @@ export function detectLeftHanging(
   return worst
 }
 
-/** The smallest net loss any legal move allows (0 if some move keeps everything safe). */
-export function leastLossAvailable(fenBefore: string, minNetLoss = 2): number {
+/**
+ * The smallest net loss any legal move allows (0 if some move keeps everything safe). With `below`,
+ * it stops as soon as a move losing less than that is found (all a caller asking "is there a safer
+ * move?" needs): a piece that cannot be saved otherwise makes it try every move, which is slow on phones.
+ */
+export function leastLossAvailable(fenBefore: string, minNetLoss = 2, below = 0): number {
   const chess = load(fenBefore)
   if (!chess) return 0
   let least = Infinity
-  for (const move of chess.moves({ verbose: true })) {
-    const loss = detectLeftHanging(fenBefore, { from: move.from, to: move.to, promotion: move.promotion }, minNetLoss)?.netLoss ?? 0
+  // Plain move names: chess.js lists them much faster than the detailed moves, and they can be played as they are.
+  for (const move of chess.moves()) {
+    const loss = detectLeftHanging(fenBefore, move, minNetLoss)?.netLoss ?? 0
     least = Math.min(least, loss)
-    if (least === 0) break
+    if (least === 0 || least < below) break
   }
   return least === Infinity ? 0 : least
 }
@@ -163,5 +182,5 @@ export function shouldWarn(
 ): LeftHanging | null {
   const result = detectLeftHanging(fenBefore, move, minNetLoss)
   if (!result) return null
-  return leastLossAvailable(fenBefore, minNetLoss) < result.netLoss ? result : null
+  return leastLossAvailable(fenBefore, minNetLoss, result.netLoss) < result.netLoss ? result : null
 }

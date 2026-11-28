@@ -13,8 +13,8 @@ export function chessEngine(role: EngineRole): GameEngine {
     adapter = {
       start: () => engine.start(),
       newGame: () => engine.newGame(),
-      analyze: async (position, options) =>
-        (await engine.search(position, options)).lines.map((line) => ({ score: line.score, pv: line.pv })),
+      analyze: async (position, { depth, multiPV, maxMs }) =>
+        (await engine.search(position, { depth, multiPV, movetime: maxMs })).lines.map((line) => ({ score: line.score, pv: line.pv })),
       chooseMove: (position, levelId) => chooseEngineMove(engine, position, getLevel(levelId)),
       cancelAll: () => engine.cancelAll(),
     }

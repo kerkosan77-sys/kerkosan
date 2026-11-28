@@ -1,5 +1,5 @@
-import { Chess } from 'chess.js'
-import type { GameModule, MoveRecord, ReadGame, Side } from '../../core/types'
+import { Chess, type Move } from 'chess.js'
+import type { GameModule, MoveRecord, ReadGame, RecordMeta, Side } from '../../core/types'
 import { chessEngine } from './engine/adapter'
 import { LEVELS } from './engine/levels'
 import { CHESS_LESSONS } from './lessons'
@@ -21,21 +21,123 @@ export interface ChessState {
   game: Chess
 }
 
+interface KnownMoves {
+  records: MoveRecord[]
+  /** The moves in plain SAN, for copying the game. */
+  san: string[]
+}
+
+/**
+ * The moves of every game state, worked out once. chess.js rebuilds its whole move list (working out
+ * every legal move again for each one) whenever it is asked for the history; the play screen asks on
+ * every redraw, which made long games stutter on phones. A state made by `play` gets the list of
+ * the state before plus its one new move.
+ */
+const known = new WeakMap<Chess, KnownMoves>()
+
+function knownMoves(game: Chess): KnownMoves {
+  let moves = known.get(game)
+  if (!moves) {
+    const verbose = game.history({ verbose: true })
+    moves = { records: verbose.map(toRecord), san: verbose.map((move) => move.san) }
+    known.set(game, moves)
+  }
+  return moves
+}
+
+function toRecord(move: Move): MoveRecord {
+  return { code: move.lan, label: formatSan(move.san), side: move.color, before: move.before, after: move.after }
+}
+
+/** One move in chess.js's history, as version 1.4 keeps it. */
+interface HistoryEntry {
+  move: unknown
+  kings: Record<string, number>
+  castling: Record<string, number>
+}
+
+/** chess.js's own fields, as version 1.4 keeps them (checked before they are copied). */
+interface ChessFields {
+  _board: unknown[]
+  _kings: Record<string, number>
+  _castling: Record<string, number>
+  _header: Record<string, string>
+  _comments: Record<string, string>
+  _history: HistoryEntry[]
+  _positionCount: Map<unknown, number>
+  _hash: bigint
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
+
+/**
+ * A copy made straight from chess.js's fields, in a few microseconds: replaying the moves took
+ * longer with every move (about 8 ms at move 50 on a computer, several times that on a phone, for
+ * every move of both sides). chess.js changes the king and castling records of a move when it takes
+ * the move back, so each copy gets its own; the board's pieces and the moves themselves are never
+ * changed once made and are shared. Null if chess.js keeps its fields differently (another
+ * version): the moves are replayed then.
+ */
+function copyFields(game: Chess): Chess | null {
+  const fields = game as unknown as ChessFields
+  const first = fields._history?.[0] as unknown
+  if (
+    !Array.isArray(fields._board) ||
+    fields._board.length !== 128 ||
+    !Array.isArray(fields._history) ||
+    !(fields._positionCount instanceof Map) ||
+    typeof fields._hash !== 'bigint' ||
+    !isRecord(fields._kings) ||
+    !isRecord(fields._castling) ||
+    (first !== undefined && !(isRecord(first) && 'move' in first && isRecord(first.kings) && isRecord(first.castling)))
+  ) {
+    return null
+  }
+  const copy = Object.assign(Object.create(Chess.prototype) as Chess, game) as unknown as ChessFields
+  copy._board = fields._board.slice()
+  copy._kings = { ...fields._kings }
+  copy._castling = { ...fields._castling }
+  copy._header = { ...fields._header }
+  copy._comments = { ...fields._comments }
+  copy._history = fields._history.map((entry) => ({ ...entry, kings: { ...entry.kings }, castling: { ...entry.castling } }))
+  copy._positionCount = new Map(fields._positionCount)
+  const result = copy as unknown as Chess
+  return result.fen() === game.fen() ? result : null
+}
+
 function clone(game: Chess): Chess {
-  if (game.history().length === 0) return new Chess(game.fen())
+  const { san } = knownMoves(game)
+  if (san.length === 0) return new Chess(game.fen())
+  const fast = copyFields(game)
+  if (fast) {
+    known.set(fast, knownMoves(game))
+    return fast
+  }
   const copy = new Chess()
-  copy.loadPgn(game.pgn())
+  // Games set up from a position keep their headers; ordinary games are copied from their moves alone.
+  if (game.getHeaders().FEN) copy.loadPgn(game.pgn())
+  else copy.loadPgn(san.map((move, i) => (i % 2 === 0 ? `${i / 2 + 1}. ${move}` : move)).join(' '))
+  known.set(copy, knownMoves(game))
   return copy
 }
 
+/** PGN of a game from the standard start position. */
+function pgnText(san: string[], meta?: RecordMeta): string {
+  const headers: [string, string][] = []
+  if (meta) {
+    headers.push(['Event', 'Akıl Oyunları Koçu'])
+    if (meta.date) headers.push(['Date', pgnDate(meta.date)])
+    if (meta.names) headers.push(['White', meta.names.w], ['Black', meta.names.b])
+    if (meta.result) headers.push(['Result', meta.result])
+  }
+  const moves = san.map((move, i) => (i % 2 === 0 ? `${i / 2 + 1}. ${move}` : move))
+  if (meta?.result) moves.push(meta.result)
+  const head = headers.map(([key, value]) => `[${key} "${value.replace(/"/g, "'")}"]`).join('\n')
+  return head ? `${head}\n\n${moves.join(' ')}` : moves.join(' ')
+}
+
 function historyOf(game: Chess): MoveRecord[] {
-  return game.history({ verbose: true }).map((move) => ({
-    code: move.lan,
-    label: formatSan(move.san),
-    side: move.color,
-    before: move.before,
-    after: move.after,
-  }))
+  return knownMoves(game).records
 }
 
 /** Plays through a PGN and returns its moves plus how each position ended (if it did). */
@@ -103,6 +205,8 @@ export const chessModule: GameModule<ChessState> = {
     return { game }
   },
   stateToRecord(state, meta) {
+    // Saved after every move: written from the known moves instead of asking chess.js to replay the game.
+    if (!state.game.getHeaders().FEN) return pgnText(knownMoves(state.game).san, meta)
     const game = clone(state.game)
     if (meta) {
       game.setHeader('Event', 'Akıl Oyunları Koçu')
@@ -120,11 +224,14 @@ export const chessModule: GameModule<ChessState> = {
   history: (state) => historyOf(state.game),
   play(state, move) {
     const game = clone(state.game)
+    const before = knownMoves(state.game)
+    let played: Move
     try {
-      game.move(parseUci(move))
+      played = game.move(parseUci(move))
     } catch {
       return null
     }
+    known.set(game, { records: [...before.records, toRecord(played)], san: [...before.san, played.san] })
     return { game }
   },
   end: (state, userSide) => detectGameEnd(state.game, userSide),
@@ -163,7 +270,7 @@ export const chessModule: GameModule<ChessState> = {
   statusNote: (state, userSide) =>
     state.game.turn() === userSide && state.game.inCheck() ? 'Şah! Şahını tehlikeden kurtarman gerekiyor.' : null,
   coachQuestions(state) {
-    const history = state.game.history()
+    const history = knownMoves(state.game).san
     return coachQuestions(history.length > 0 ? formatSan(history[history.length - 1]) : null)
   },
   coachTip: (state) => chessCoachTip(state.game.fen()),

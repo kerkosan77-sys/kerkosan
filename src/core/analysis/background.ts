@@ -33,6 +33,32 @@ const listeners = new Map<string, Set<Listener>>()
 const running = new Map<string, Promise<GameRecord | null>>()
 let queue: Promise<unknown> = Promise.resolve()
 
+/**
+ * While a game is played, analyses wait between positions: on a phone the computer opponent and the
+ * live coach already use the engines, and a third search made games stutter.
+ */
+let holds = 0
+let waiting: (() => void)[] = []
+
+/** Holds background analyses until the returned function is called (or every hold is released). */
+export function holdAnalysis(): () => void {
+  holds++
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    holds--
+    if (holds === 0) {
+      for (const resume of waiting) resume()
+      waiting = []
+    }
+  }
+}
+
+function whenFree(): Promise<void> {
+  return holds === 0 ? Promise.resolve() : new Promise((resolve) => waiting.push(resolve))
+}
+
 function update(job: AnalysisJob) {
   jobs.set(job.gameId, job)
   for (const listener of listeners.get(job.gameId) ?? []) listener(job)
@@ -93,6 +119,7 @@ async function run(game: GameModule, gameId: string): Promise<GameRecord | null>
     await engine.start()
     const analysis = await analyzeGame(game, engine, found.record, found.userSide, {
       onProgress: (done, total) => update({ gameId, status: 'running', done, total }),
+      pause: whenFree,
     })
     // The game may have changed meanwhile (Go: dead stones corrected after the end): start over.
     const latest = await getGame(gameId)

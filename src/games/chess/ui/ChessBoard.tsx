@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { memo, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Chessboard, type Arrow, type PieceDropHandlerArgs, type SquareHandlerArgs } from 'react-chessboard'
 import { Chess, type Square } from 'chess.js'
 import type { Side as Color } from '../../../core/types'
@@ -51,7 +51,10 @@ function findKing(chess: Chess, color: Color): string | null {
   return null
 }
 
-export default function Board({
+/** Drawn again only when one of its props changes (the play screen redraws often while the coach works). */
+export default memo(Board)
+
+function Board({
   fen,
   orientation,
   movableColor = null,
@@ -70,7 +73,8 @@ export default function Board({
     setPromotion(null)
   }, [fen, movableColor])
 
-  const canMove = movableColor !== null && chess.turn() === movableColor && !chess.isGameOver()
+  const over = useMemo(() => chess.isGameOver(), [chess])
+  const canMove = movableColor !== null && chess.turn() === movableColor && !over
 
   const targets = useMemo(() => {
     if (!selected || !canMove) return []

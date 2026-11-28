@@ -7,6 +7,14 @@ import type { EngineLine, GameModule, MoveRecord, Side } from '../core/types'
 /** Recent moves the coach keeps evaluated (enough for the user's move and the computer's replies). */
 const RECENT = 6
 
+/**
+ * The longest the coach's engine looks at one position. A computer reaches the full depth well
+ * before this; a phone stops a little short of it in busy positions instead of keeping a second
+ * engine running at full power for seconds after every move (next to the computer's own), which
+ * heats the phone and slows everything else on it.
+ */
+const LIVE_MAX_MS = 800
+
 export interface LiveCoach {
   /** The user's winning chances in the current position, or null until the engine has looked. */
   win: number | null
@@ -33,12 +41,18 @@ interface Options {
 export function useLiveCoach({ game, enabled, gameKey, history, position, turn, userSide }: Options): LiveCoach {
   const linesRef = useRef(new Map<string, EngineLine[]>())
   const afterBestRef = useRef(new Map<string, number | null>())
+  /**
+   * Finished move evaluations by everything they depend on. Each one writes explanations (costly on
+   * a phone), and the moves are looked at again every time the engine finishes a position.
+   */
+  const evaluatedRef = useRef(new Map<string, MoveAnalysis>())
   const [coach, setCoach] = useState<LiveCoach>({ win: null, moves: new Map() })
 
   // A new game starts with nothing known.
   useEffect(() => {
     linesRef.current = new Map()
     afterBestRef.current = new Map()
+    evaluatedRef.current = new Map()
     setCoach({ win: null, moves: new Map() })
   }, [gameKey, game])
 
@@ -51,6 +65,7 @@ export function useLiveCoach({ game, enabled, gameKey, history, position, turn, 
     const recent = history.slice(Math.max(0, n - RECENT))
     const lines = linesRef.current
     const afterBest = afterBestRef.current
+    const evaluated = evaluatedRef.current
 
     const recompute = () => {
       if (!alive) return
@@ -64,22 +79,29 @@ export function useLiveCoach({ game, enabled, gameKey, history, position, turn, 
         if (!ended && !after) continue
         const key = `${move.before}|${move.code}`
         if (game.compareAfterBest && !afterBest.has(key)) continue
-        moves.set(
-          i,
-          evaluateMove({
-            game,
-            ply: i,
-            move,
-            userSide,
-            lines: before,
-            afterBestWin: afterBest.get(key) ?? null,
-            ended,
-            replyLines: after ?? null,
-            sideAfter: i + 1 < n ? history[i + 1].side : turn,
-            nextCode: history[i + 1]?.code ?? null,
-            live: true,
-          }),
-        )
+        const sideAfter = i + 1 < n ? history[i + 1].side : turn
+        const nextCode = history[i + 1]?.code ?? null
+        const known = `${i}|${key}|${sideAfter}|${nextCode}|${after ? 1 : 0}|${afterBest.get(key) ?? '-'}`
+        const done = evaluated.get(known)
+        if (done) {
+          moves.set(i, done)
+          continue
+        }
+        const analysis = evaluateMove({
+          game,
+          ply: i,
+          move,
+          userSide,
+          lines: before,
+          afterBestWin: afterBest.get(key) ?? null,
+          ended,
+          replyLines: after ?? null,
+          sideAfter,
+          nextCode,
+          live: true,
+        })
+        evaluated.set(known, analysis)
+        moves.set(i, analysis)
       }
       const current = lines.get(position)
       setCoach((previous) => ({
@@ -96,7 +118,7 @@ export function useLiveCoach({ game, enabled, gameKey, history, position, turn, 
         if (!alive) return
         if (lines.has(target)) continue
         try {
-          const found = await engine.analyze(target, { depth, multiPV: 2 })
+          const found = await engine.analyze(target, { depth, multiPV: 2, maxMs: LIVE_MAX_MS })
           lines.set(target, found)
         } catch {
           return

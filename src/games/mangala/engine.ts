@@ -1,6 +1,6 @@
 import type { EngineRole } from '../../core/types'
 import { EngineCancelledError } from '../../core/engine'
-import { pickHumanMove } from '../../core/humanize'
+import { botMove } from '../../core/humanize'
 import type { EngineLine, GameEngine } from '../../core/types'
 import { getLevel } from './levels'
 import { decode, legalMoves } from './rules'
@@ -62,16 +62,10 @@ class MangalaEngine implements GameEngine {
     })
   }
 
-  async chooseMove(position: string, levelId: number): Promise<string | null> {
-    const level = getLevel(levelId)
-    const legal = legalMoves(decode(position)).map(String)
-    if (legal.length === 0) return null
-    if (level.humanize) {
-      const lines = await this.analyze(position, { depth: level.depth, multiPV: level.humanize.multiPV })
-      return pickHumanMove(lines, legal, level.humanize) ?? lines[0]?.pv[0] ?? legal[0]
-    }
-    const lines = await this.analyze(position, { depth: level.depth, multiPV: 1 })
-    return lines[0]?.pv[0] ?? legal[0]
+  chooseMove(position: string, levelId: number): Promise<string | null> {
+    return botMove(getLevel(levelId), legalMoves(decode(position)).map(String), (depth, multiPV) =>
+      this.analyze(position, { depth, multiPV }),
+    )
   }
 
   cancelAll(): void {

@@ -1,5 +1,5 @@
 import { EngineCancelledError } from './engine'
-import { pickHumanMove, type Humanize } from './humanize'
+import { botMove, type BotStyle } from './humanize'
 import type { EngineLine, GameEngine } from './types'
 
 interface Pending {
@@ -13,7 +13,7 @@ export interface WorkerEngineConfig {
   createWorker(): Worker
   /** Legal move codes in a position (for random moves at easy levels). */
   legalMoves(position: string): string[]
-  level(id: number): { depth: number; maxMs?: number; humanize?: Humanize }
+  level(id: number): BotStyle & { maxMs?: number }
 }
 
 /**
@@ -74,17 +74,11 @@ export class WorkerEngine implements GameEngine {
     })
   }
 
-  async chooseMove(position: string, levelId: number): Promise<string | null> {
+  chooseMove(position: string, levelId: number): Promise<string | null> {
     const level = this.config.level(levelId)
-    const legal = this.config.legalMoves(position)
-    if (legal.length === 0) return null
-    if (legal.length === 1) return legal[0]
-    if (level.humanize) {
-      const lines = await this.analyze(position, { depth: level.depth, multiPV: level.humanize.multiPV, maxMs: level.maxMs })
-      return pickHumanMove(lines, legal, level.humanize) ?? lines[0]?.pv[0] ?? legal[0]
-    }
-    const lines = await this.analyze(position, { depth: level.depth, multiPV: 1, maxMs: level.maxMs })
-    return lines[0]?.pv[0] ?? legal[0]
+    return botMove(level, this.config.legalMoves(position), (depth, multiPV) =>
+      this.analyze(position, { depth, multiPV, maxMs: level.maxMs }),
+    )
   }
 
   cancelAll(): void {

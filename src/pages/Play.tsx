@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import EvalBar from '../components/EvalBar'
 import MoveList from '../components/MoveList'
 import Toggle from '../components/Toggle'
 import TopBar from '../components/TopBar'
 import { useLiveCoach, type LiveCoach } from '../components/useLiveCoach'
-import { queueAnalysis, watchAnalysis, type AnalysisJob } from '../core/analysis/background'
+import { holdAnalysis, queueAnalysis, watchAnalysis, type AnalysisJob } from '../core/analysis/background'
 import { autoSave } from '../core/cloud'
 import { CLASSIFICATION_INFO, isErrorClass } from '../core/classify'
 import { moveSound, sounds } from '../core/sound'
@@ -80,6 +80,8 @@ export default function Play({ game }: { game: GameModule }) {
   const [confirmPass, setConfirmPass] = useState(false)
   /** Learning mode: the warning about the user's last move (the move is played anyway; it can be taken back). */
   const [lastWarning, setLastWarning] = useState<CoachWarning | null>(null)
+  /** Bumped whenever the warning shown would no longer fit (new move, take-back, new game). */
+  const warningToken = useRef(0)
   /** The state before each move of this game, newest last: "Geri al" goes back through them. */
   const undoStack = useRef<unknown[]>([])
   const [gameKey, setGameKey] = useState(0)
@@ -92,6 +94,11 @@ export default function Play({ game }: { game: GameModule }) {
   const [endRank, setEndRank] = useState<EndRank | null>(null)
   /** The finished game (with its analysis) was saved to Google Drive. */
   const [cloudSaved, setCloudSaved] = useState(false)
+
+  // While a game is on, earlier games' analyses wait (the computer and the coach need the engines).
+  useEffect(() => {
+    if (phase === 'playing' && !end) return holdAnalysis()
+  }, [phase, end])
 
   // The finished game is analysed in the background; its puzzles are saved by themselves.
   useEffect(() => {
@@ -215,7 +222,7 @@ export default function Play({ game }: { game: GameModule }) {
     savedRecordRef.current = null
     setConfirmResign(false)
     setConfirmPass(false)
-    setLastWarning(null)
+    clearWarning()
     undoStack.current = []
     setThinking(false)
     setSaved(null)
@@ -239,7 +246,7 @@ export default function Play({ game }: { game: GameModule }) {
     else if (ending.outcome === 'loss') window.setTimeout(sounds.bad, 250)
     setConfirmResign(false)
     setConfirmPass(false)
-    setLastWarning(null)
+    clearWarning()
     engine.cancelAll()
     await clearSavedPlay(game.id)
 
@@ -307,10 +314,15 @@ export default function Play({ game }: { game: GameModule }) {
     return true
   }
 
+  function clearWarning() {
+    warningToken.current++
+    setLastWarning(null)
+  }
+
   /** Learning mode: the coach's warning for a move that gives something away (null when it is safe or the warning is off). */
-  function warningFor(move: string): CoachWarning | null {
+  function warningFor(move: string, before: unknown = stateRef.current): CoachWarning | null {
     if (modeRef.current !== 'learn' || !settings?.dangerWarning) return null
-    return game.coachWarning(stateRef.current, move)
+    return game.coachWarning(before, move)
   }
 
   function handleUserMove(move: string): boolean {
@@ -318,10 +330,17 @@ export default function Play({ game }: { game: GameModule }) {
     const state = stateRef.current
     if (game.turn(state) !== userSideRef.current) return false
     // The move is played right away; a risky one gets a short warning and can be taken back.
-    const warning = warningFor(move)
     if (!applyMove(move)) return false
-    if (warning) statsRef.current.warnings++
-    setLastWarning(warning)
+    clearWarning()
+    // The check is worked out just after the move is drawn, so the board never waits for it.
+    const token = warningToken.current
+    window.setTimeout(() => {
+      if (token !== warningToken.current) return
+      const warning = warningFor(move, state)
+      if (!warning || token !== warningToken.current) return
+      statsRef.current.warnings++
+      setLastWarning(warning)
+    }, 30)
     return true
   }
 
@@ -341,7 +360,7 @@ export default function Play({ game }: { game: GameModule }) {
     engine.cancelAll()
     stateRef.current = target
     statsRef.current.takebacks++
-    setLastWarning(null)
+    clearWarning()
     setThinking(false)
     setConfirmPass(false)
     setShowTerritory(false)
@@ -770,9 +789,23 @@ function CoachPanel({
   showTip: boolean
   coach: LiveCoach | null
 }) {
-  // The note depends only on the position (and some games search a little to write it).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const baseTip = useMemo(() => game.coachTip?.(state) ?? game.coachQuestions(state)[0] ?? null, [game, position])
+  // The note depends only on the position, and some games search a little to write it: it is worked
+  // out only when it is shown (the user's turn) and just after the board is drawn, so a move never waits for it.
+  const [note, setNote] = useState<{ position: string; text: string | null } | null>(null)
+  useEffect(() => {
+    if (!showTip || note?.position === position) return
+    let timer = 0
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => setNote({ position, text: game.coachTip?.(state) ?? game.coachQuestions(state)[0] ?? null }))
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      clearTimeout(timer)
+    }
+    // state goes with the position.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game, position, showTip])
+  const baseTip = note?.position === position ? note.text : null
 
   const lastUser = history.map((m) => m.side).lastIndexOf(userSide)
   const first = lastUser >= 0 ? lastUser : 0

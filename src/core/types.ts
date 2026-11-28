@@ -24,8 +24,11 @@ export interface EngineLine {
 export interface GameEngine {
   start(): Promise<void>
   newGame(): Promise<void>
-  /** Best lines for the side to move, best first. */
-  analyze(position: string, options: { depth?: number; multiPV?: number }): Promise<EngineLine[]>
+  /**
+   * Best lines for the side to move, best first. With maxMs, engines that can stop by the clock
+   * end the search after that long (or at the depth, if sooner) with what they found so far.
+   */
+  analyze(position: string, options: { depth?: number; multiPV?: number; maxMs?: number }): Promise<EngineLine[]>
   /** A move for the computer at the given difficulty level. */
   chooseMove(position: string, levelId: number): Promise<string | null>
   /** Stops the running search and drops queued ones. */

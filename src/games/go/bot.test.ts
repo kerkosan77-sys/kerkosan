@@ -10,7 +10,8 @@ const ATARI = `x ........./........./...xxxx../..xoooox./...xxx.../........./...
 
 describe('computer moves', () => {
   it('captures a big group in atari', () => {
-    expect(chooseGoMove(ATARI, getLevel(6), makeRng(3))).toBe('G5')
+    // A plain search with no careless moves (the trained levels below the top make some on purpose).
+    expect(chooseGoMove(ATARI, { ...getLevel(8), playouts: 8000 }, makeRng(3))).toBe('G5')
   })
 
   it('reports the capture as the best line with a positive score', () => {

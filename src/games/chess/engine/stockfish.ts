@@ -6,6 +6,7 @@ export { EngineCancelledError }
 
 export interface SearchOptions {
   depth?: number
+  /** Stop after this many milliseconds (together with a depth: at whichever comes first). */
   movetime?: number
   multiPV?: number
   /** Stockfish "Skill Level" 0-20. */
@@ -136,7 +137,9 @@ export class Engine {
         this.listeners.add(listener)
         this.searching = true
         this.send(`position fen ${fen}`)
-        this.send(options.movetime ? `go movetime ${options.movetime}` : `go depth ${options.depth ?? 12}`)
+        // With both, Stockfish stops at whichever comes first.
+        const depth = options.depth ?? (options.movetime ? null : 12)
+        this.send(['go', depth !== null && `depth ${depth}`, options.movetime && `movetime ${options.movetime}`].filter(Boolean).join(' '))
       })
     })
   }

@@ -127,7 +127,7 @@ npm run preview
 ## Satranç
 
 ### Oyna
-1. Zorluk seç. 1-3 arası seviyeler bilerek hata yapar; **3 (Kolay+)** 700 civarı için iyi bir başlangıç.
+1. Zorluk seç: 8 eğitilmiş bot (bkz. **Botlar ve eğitimleri**). Alt seviyeler insan gibi hata yapar; yeni başlıyorsan 1-2 ile başla, uygulama sonuçlarına göre **sana uygun botu** işaretler.
 2. Rengini seç (Beyaz / Siyah / Rastgele).
 3. **Öğrenme modu** ya da **oynama modu** seç. Öğrenme modunda hatırlatmaları ve taş bırakma uyarısını ayrı ayrı açıp kapatabilirsin (oyun sırasında da "Koç ayarları"ndan).
 4. Taşları sürükleyerek ya da önce taşa, sonra gideceği kareye tıklayarak oyna.
@@ -157,7 +157,7 @@ Yanlış cevapta ipucu olarak hangi taşla oynaman gerektiği (yeşil çerçevel
 - **Oyun sonu:** Bir oyuncunun kuyuları boşalınca oyun biter; kuyuları önce boşalan oyuncu rakibinin kuyularındaki bütün taşları alır. En çok taşı olan kazanır, 24-24 berabere.
 
 ### Oyna
-1. Zorluk seç. 1. seviye çoğu zaman rastgele oynar (kuralları öğrenmek için); 3-4 iyi bir başlangıç, 8 tam güçtür.
+1. Zorluk seç: 8 eğitilmiş bot. 1. seviye sık sık rastgele oynar (kuralları öğrenmek için); 3-4 iyi bir başlangıç, 8 tam güçtür.
 2. **Kim başlasın?** Ben başlayayım / Bilgisayar başlasın / Rastgele.
 3. Oynamak için kendi kuyuna (alttaki sıra) tıkla. Dağıtım taş taş gösterilir; yakalanan taşlar son taş düşünce hazineye gider.
 4. Kuyu numaraları sahibinin bakış açısındandır: senin kuyuların soldan sağa 1-6. Hamleler "4. kuyu (tekrar)", "6. kuyu (+4 taş)" gibi yazılır.
@@ -188,7 +188,7 @@ Sadece 6 kuyu olduğu için ipucu doğru kuyuyu göstermez, **fikri** söyler: "
 
 ### Oyna
 1. Başlamadan önce kısa bir **"Go nasıl oynanır?"** kartı görünür (yarım kalmış bir oyunun varsa kapalı gelir; dokunarak açabilirsin).
-2. Zorluk seç. 1-4 arası seviyeler bilerek hata yapar (1 en çok); **2 (Kolay)** yeni başlayanlar için iyi bir başlangıç, 8 (Usta) en güçlüsüdür.
+2. Zorluk seç: 8 eğitilmiş bot. Alt seviyeler bilerek hata yapar (1 en çok); **2 (Kolay)** yeni başlayanlar için iyi bir başlangıç, 8 (Usta) en güçlüsüdür.
 3. **Tahta boyutunu** seç:
    - **9×9:** Kısa oyunlar; hamle analizi, üstünlük çubuğu ve bulmacalar yalnızca bu tahtada var. Öğrenirken bununla başla.
    - **13×13** ve **19×19:** Daha uzun oyunlar. Koçun notu, taş kaptırma uyarısı ve **Alanı göster** burada da var, ama hamleler analiz edilmez ve bulmaca çıkmaz; oyundan yalnızca sonuç puanı gelir. Sebebi: uygulamanın Go motoru hamleleri rastgele oyunlar oynatarak değerlendirir. Bu 9×9'da iyi çalışır, ama büyük tahtalarda açılış hamlelerini çok yanlış ölçer (ölçümde sıradan ilk hamleler 3 ile 23 alan arası "kaybettiriyor" görünüyordu). Yanlış şey öğretmemesi ve haksız puan kırmaması için bu tahtalarda analiz kapalı. Bilgisayar bu tahtalarda da hızlı cevap verir ama 9×9'daki kadar güçlü oynamaz.
@@ -232,7 +232,7 @@ Sadece 6 kuyu olduğu için ipucu doğru kuyuyu göstermez, **fikri** söyler: "
 - Rakibin bütün taşlarını alan ya da rakibini hamlesiz bırakan kazanır. **Berabere:** ikinizin de birer taşı kalırsa, aynı pozisyon üç kez tekrarlanırsa ya da 32 hamle boyunca taş alınmazsa.
 
 ### Oyna
-1. Zorluk seç. 1-5 arası seviyeler bilerek hata yapar; **3 (Kolay+)** iyi bir başlangıç, 8 (Usta) hamle başına en fazla 3,5 saniye düşünür.
+1. Zorluk seç: 8 eğitilmiş bot. Alt seviyeler bilerek hata yapar; **3 (Kolay+)** iyi bir başlangıç, 8 (Usta) hamle başına en fazla 3,5 saniye düşünür.
 2. Rengini seç: **Beyaz** / Siyah / Rastgele.
 3. Önce taşına, sonra gideceği kareye dokun. Gidebileceği kareler yeşil noktayla gösterilir. Birden fazla durağı olan bir almada son kareye dokunman yeterli; aynı kareye iki farklı yoldan gidilebiliyorsa ara durağa da dokunursun.
 4. Hamleler "c3-c4", alma "d4×d6×f6", dama olma "d7-d8 (dama)" diye yazılır.
@@ -261,7 +261,7 @@ Dama oyunları uygulamada oynadığın oyunlardır. Açıklamalar şunları tan�
 - Kareler Reversi'deki alışılmış biçimde yazılır: sütunlar soldan a-h, satırlar **yukarıdan** 1-8.
 
 ### Oyna
-1. Zorluk seç. 1-5 arası seviyeler bilerek hata yapar; **3 (Kolay+)** iyi bir başlangıç. 6 ve üstü seviyeler oyunun son 10 hamlesini (8. seviye son 14 hamlesini) sonuna kadar tam hesaplar.
+1. Zorluk seç: 8 eğitilmiş bot. Alt seviyeler bilerek hata yapar; **3 (Kolay+)** iyi bir başlangıç. Güçlü seviyeler oyunun son hamlelerini sonuna kadar tam hesaplar (8. seviye son 14 hamleyi).
 2. Rengini seç: **Siyah** / Beyaz / Rastgele.
 3. Oynayabileceğin kareler küçük noktalarla gösterilir. Farenin altındaki kareye oynarsan çevrilecek taşlar soluklaşır. Hamleler "d3 (+2)" diye yazılır (parantezdeki sayı çevrilen taş sayısıdır).
 4. Rakibin oynayamazsa "tekrar sen oynuyorsun" yazısı çıkar.
@@ -401,6 +401,47 @@ Her oyunun toplam puanı, botların 8 düzeyinden birine denk gelir: puanın art
 Puan düzeyi ne kadar yol aldığını gösterir. **Sana uygun bot** ise son sonuçlarına bakar (aynı seviyede 3 oyunun 2'sini kazanınca bir üst seviye önerilir), yani hangi botla oynaman gerektiğini söyler.
 
 Puan ana ekrandaki özette (son oyunun getirdiğiyle), son oyunlar listesinde, oyun bitti ekranında ve analiz ekranında görünür. Özetteki **📈 satırı** son 10 oyundaki hata oranını önceki 10 oyunla karşılaştırır: uygulamanın işe yarayıp yaramadığını en kolay buradan görürsün.
+
+## Botlar ve eğitimleri
+
+Her oyunda 8 ayrı bot vardır: Çok kolay, Kolay, Kolay+, Orta, Orta+, Zor, Çok zor, Usta. Her bot üç ayarla tanımlanır: **ne kadar ileriyi düşündüğü** (arama derinliği; Go'da oynattığı rastgele oyun sayısı), **iyi hamleler arasından ne kadar gevşek seçtiği** (biraz daha zayıf bir hamleyi de seçebilmesi) ve **dikkatsizlik payı** (arada bir rastgele hamle). Zayıf botlar insan gibi hata yapar; düzey yükseldikçe hataları azalır. Usta hep en iyi bulduğu hamleyi oynar.
+
+Bu ayarlar elle tahmin edilmedi, **eğitimle bulundu**:
+
+1. Her oyun için çok zayıftan tam güce 11 botluk bir **eğitim merdiveni** kuruldu.
+2. Merdivendeki botlar birbirleriyle binlerce maç oynadı (her açılış iki renkle de oynanır, ilk hamleler rastgele seçilir ki maçlar birbirini tekrar etmesin). Sonuçlardan her botun gücü Elo puanıyla ölçüldü.
+3. 8 düzey merdivene yerleştirildi: 1. düzey en zayıf bot, 8. düzey en güçlüsü (Usta). Aradakiler, düzeyler arası fark yukarı çıktıkça biraz büyüyecek şekilde (her adım bir öncekinden %15 büyük) yerleşti. İki bot arasına düşen bir düzeyin ayarları ikisinin arasındadır (örneğin "hamlelerin %40'ında bir adım daha derin düşün").
+4. Sonra komşu düzeyler birbirleriyle oynatıldı ve farklar plana uyana kadar ayarlar birkaç tur kaydırıldı. Bir tur farkları plandan uzaklaştırırsa eski ayarlar kalır.
+
+**Sonuçlar** (28 Kasım 2026 eğitimi). Her hücre, bir düzeyin bir alttaki düzeye karşı aldığı puandır (galibiyet 1, beraberlik yarım puan): %50 eşit güç demek, %75 dört oyundan aşağı yukarı üçünü kazanmak.
+
+| Oyun | 2. – 1. | 3. – 2. | 4. – 3. | 5. – 4. | 6. – 5. | 7. – 6. | 8. – 7. | Eşleşme başına oyun |
+|---|---|---|---|---|---|---|---|---|
+| Satranç | %74 | %79 | %85 | %92 | %92 | %92 | %92 | 120 |
+| Mangala | %60 | %62 | %64 | %64 | %68 | %70 | %75 | 400 |
+| Go (9×9) | %60 | %90 | %85 | %80 | %80 | %90 | %95 | 20 |
+| Reversi | %81 | %80 | %78 | %88 | %83 | %81 | %81 | 40 |
+| Dama | %73 | %73 | %85 | %89 | %80 | %84 | %91 | 40 |
+
+Mangala'nın düzeyleri en düzgün aralıklı olanlar. Satrançta 4. düzeyden sonra her düzey bir alttakini neredeyse hep yener: satranç motoru çok güçlü olduğu için 8 düzey çok geniş bir aralığı kaplar. Go'nun oyunları yavaş olduğu için eşleşme başına yalnızca 20 oyun oynandı; Go'nun sayıları kabadır.
+
+Eğitilen ayarlar her oyunun `bots.trained.ts` dosyasındadır; ölçüm sonuçları `scripts/train-bots/results/` klasöründe. Telefonlar bu bilgisayardan yaklaşık 3 kat yavaş olduğu için, süre sınırı olan botlar eğitimde telefondaki kadar derin düşünecek şekilde ölçüldü.
+
+Botları yeniden eğitmek için (oyun: `mangala`, `reversi`, `dama`, `go`, `chess`):
+
+```powershell
+node scripts/train-bots/run.mjs mangala train 400
+```
+
+```powershell
+node scripts/train-bots/run.mjs mangala verify 400
+```
+
+```powershell
+node scripts/train-bots/run.mjs mangala refine 400
+```
+
+Sondaki sayı, eşleşme başına oyun sayısıdır. Mangala birkaç dakikada biter; satranç, Reversi ve Dama bir iki saat sürer, Go birkaç saat.
 
 ## Sesler
 

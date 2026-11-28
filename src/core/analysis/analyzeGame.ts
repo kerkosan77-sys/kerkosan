@@ -23,6 +23,8 @@ export interface AnalyzeOptions {
   depth?: number
   onProgress?: (done: number, total: number) => void
   signal?: AbortSignal
+  /** Awaited before each position: lets a game being played have the device's engines first. */
+  pause?: () => Promise<void>
 }
 
 /**
@@ -78,6 +80,7 @@ export async function analyzeGame(
   let done = 0
   options.onProgress?.(0, total)
   for (const i of needed) {
+    await options.pause?.()
     if (options.signal?.aborted) throw new EngineCancelledError()
     const multiPV = sideToMove(i) === userSide ? CANDIDATE_LINES : OPPONENT_LINES
     const lines = await engine.analyze(positions[i], { depth, multiPV })

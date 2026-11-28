@@ -1,0 +1,555 @@
+{
+  "trained": "2026-11-28T09:57:28.261Z",
+  "ladder": [
+    {
+      "depth": 0,
+      "playouts": 150,
+      "humanize": {
+        "multiPV": 10,
+        "temperature": 800,
+        "randomMoveChance": 0.3
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 300,
+      "humanize": {
+        "multiPV": 8,
+        "temperature": 550,
+        "randomMoveChance": 0.15
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 600,
+      "humanize": {
+        "multiPV": 8,
+        "temperature": 380,
+        "randomMoveChance": 0.08
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 1000,
+      "humanize": {
+        "multiPV": 8,
+        "temperature": 250,
+        "randomMoveChance": 0.04
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 2000,
+      "humanize": {
+        "multiPV": 6,
+        "temperature": 150,
+        "randomMoveChance": 0.02
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 4000,
+      "humanize": {
+        "multiPV": 6,
+        "temperature": 70,
+        "randomMoveChance": 0.01
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 6000,
+      "humanize": {
+        "multiPV": 4,
+        "temperature": 25,
+        "randomMoveChance": 0
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 9000
+    },
+    {
+      "depth": 0,
+      "playouts": 14000
+    },
+    {
+      "depth": 0,
+      "playouts": 20000
+    },
+    {
+      "depth": 0,
+      "playouts": 30000
+    }
+  ],
+  "ladderElo": [
+    0,
+    404,
+    664,
+    832,
+    1290,
+    1535,
+    1741,
+    2149,
+    2190,
+    2285,
+    2300
+  ],
+  "gamesPerPair": 40,
+  "gamesPlayed": 1040,
+  "places": [
+    0,
+    0.5139622352766426,
+    1.163377785180702,
+    2.3416602307554757,
+    3.449102159560418,
+    4.454437886773566,
+    6.191489961499722,
+    10
+  ],
+  "levels": [
+    {
+      "depth": 0,
+      "playouts": 150,
+      "humanize": {
+        "multiPV": 10,
+        "temperature": 800,
+        "randomMoveChance": 0.3
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 210,
+      "humanize": {
+        "multiPV": 10,
+        "temperature": 672,
+        "randomMoveChance": 0.223
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 340,
+      "humanize": {
+        "multiPV": 8,
+        "temperature": 522,
+        "randomMoveChance": 0.139
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 710,
+      "humanize": {
+        "multiPV": 8,
+        "temperature": 336,
+        "randomMoveChance": 0.066
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 1370,
+      "humanize": {
+        "multiPV": 8,
+        "temperature": 205,
+        "randomMoveChance": 0.031
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 2740,
+      "humanize": {
+        "multiPV": 6,
+        "temperature": 114,
+        "randomMoveChance": 0.015
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 6480,
+      "humanize": {
+        "multiPV": 4,
+        "temperature": 20,
+        "randomMoveChance": 0
+      }
+    },
+    {
+      "depth": 0,
+      "playouts": 30000
+    }
+  ],
+  "levelElo": [
+    0,
+    208,
+    447,
+    722,
+    1038,
+    1401,
+    1819,
+    2300
+  ],
+  "pairs": [
+    {
+      "a": 0,
+      "b": 1,
+      "games": 40,
+      "wins": 3,
+      "draws": 0,
+      "losses": 37,
+      "score": 0.075,
+      "plies": 82
+    },
+    {
+      "a": 0,
+      "b": 2,
+      "games": 40,
+      "wins": 1,
+      "draws": 0,
+      "losses": 39,
+      "score": 0.025,
+      "plies": 75
+    },
+    {
+      "a": 1,
+      "b": 2,
+      "games": 40,
+      "wins": 6,
+      "draws": 0,
+      "losses": 34,
+      "score": 0.15,
+      "plies": 80
+    },
+    {
+      "a": 1,
+      "b": 3,
+      "games": 40,
+      "wins": 4,
+      "draws": 0,
+      "losses": 36,
+      "score": 0.1,
+      "plies": 75
+    },
+    {
+      "a": 2,
+      "b": 3,
+      "games": 40,
+      "wins": 10,
+      "draws": 0,
+      "losses": 30,
+      "score": 0.25,
+      "plies": 82
+    },
+    {
+      "a": 2,
+      "b": 4,
+      "games": 40,
+      "wins": 1,
+      "draws": 0,
+      "losses": 39,
+      "score": 0.025,
+      "plies": 74
+    },
+    {
+      "a": 3,
+      "b": 4,
+      "games": 40,
+      "wins": 3,
+      "draws": 0,
+      "losses": 37,
+      "score": 0.075,
+      "plies": 82
+    },
+    {
+      "a": 3,
+      "b": 5,
+      "games": 40,
+      "wins": 0,
+      "draws": 0,
+      "losses": 40,
+      "score": 0,
+      "plies": 70
+    },
+    {
+      "a": 4,
+      "b": 5,
+      "games": 40,
+      "wins": 9,
+      "draws": 0,
+      "losses": 31,
+      "score": 0.225,
+      "plies": 77
+    },
+    {
+      "a": 4,
+      "b": 6,
+      "games": 40,
+      "wins": 2,
+      "draws": 0,
+      "losses": 38,
+      "score": 0.05,
+      "plies": 72
+    },
+    {
+      "a": 5,
+      "b": 6,
+      "games": 40,
+      "wins": 10,
+      "draws": 0,
+      "losses": 30,
+      "score": 0.25,
+      "plies": 73
+    },
+    {
+      "a": 5,
+      "b": 7,
+      "games": 40,
+      "wins": 1,
+      "draws": 0,
+      "losses": 39,
+      "score": 0.025,
+      "plies": 68
+    },
+    {
+      "a": 6,
+      "b": 7,
+      "games": 40,
+      "wins": 4,
+      "draws": 0,
+      "losses": 36,
+      "score": 0.1,
+      "plies": 66
+    },
+    {
+      "a": 6,
+      "b": 8,
+      "games": 40,
+      "wins": 2,
+      "draws": 0,
+      "losses": 38,
+      "score": 0.05,
+      "plies": 68
+    },
+    {
+      "a": 7,
+      "b": 8,
+      "games": 40,
+      "wins": 18,
+      "draws": 0,
+      "losses": 22,
+      "score": 0.45,
+      "plies": 75
+    },
+    {
+      "a": 7,
+      "b": 9,
+      "games": 40,
+      "wins": 13,
+      "draws": 0,
+      "losses": 27,
+      "score": 0.325,
+      "plies": 75
+    },
+    {
+      "a": 8,
+      "b": 9,
+      "games": 40,
+      "wins": 14,
+      "draws": 0,
+      "losses": 26,
+      "score": 0.35,
+      "plies": 76
+    },
+    {
+      "a": 8,
+      "b": 10,
+      "games": 40,
+      "wins": 14,
+      "draws": 0,
+      "losses": 26,
+      "score": 0.35,
+      "plies": 75
+    },
+    {
+      "a": 9,
+      "b": 10,
+      "games": 40,
+      "wins": 19,
+      "draws": 0,
+      "losses": 21,
+      "score": 0.475,
+      "plies": 73
+    }
+  ],
+  "verified": "2026-11-28T10:03:49.031Z",
+  "verifyGamesPerPair": 20,
+  "verify": [
+    {
+      "a": 1,
+      "b": 0,
+      "games": 20,
+      "wins": 12,
+      "draws": 0,
+      "losses": 8,
+      "score": 0.6,
+      "plies": 81,
+      "elo": 70
+    },
+    {
+      "a": 2,
+      "b": 1,
+      "games": 20,
+      "wins": 18,
+      "draws": 0,
+      "losses": 2,
+      "score": 0.9,
+      "plies": 85,
+      "elo": 382
+    },
+    {
+      "a": 3,
+      "b": 2,
+      "games": 20,
+      "wins": 17,
+      "draws": 0,
+      "losses": 3,
+      "score": 0.85,
+      "plies": 86,
+      "elo": 301
+    },
+    {
+      "a": 4,
+      "b": 3,
+      "games": 20,
+      "wins": 16,
+      "draws": 0,
+      "losses": 4,
+      "score": 0.8,
+      "plies": 82,
+      "elo": 241
+    },
+    {
+      "a": 5,
+      "b": 4,
+      "games": 20,
+      "wins": 16,
+      "draws": 0,
+      "losses": 4,
+      "score": 0.8,
+      "plies": 83,
+      "elo": 241
+    },
+    {
+      "a": 6,
+      "b": 5,
+      "games": 20,
+      "wins": 18,
+      "draws": 0,
+      "losses": 2,
+      "score": 0.9,
+      "plies": 72,
+      "elo": 382
+    },
+    {
+      "a": 7,
+      "b": 6,
+      "games": 20,
+      "wins": 19,
+      "draws": 0,
+      "losses": 1,
+      "score": 0.95,
+      "plies": 70,
+      "elo": 512
+    }
+  ],
+  "refineRounds": 1,
+  "best": {
+    "places": [
+      0,
+      0.5139622352766426,
+      1.163377785180702,
+      2.3416602307554757,
+      3.449102159560418,
+      4.454437886773566,
+      6.191489961499722,
+      10
+    ],
+    "verify": [
+      {
+        "a": 1,
+        "b": 0,
+        "games": 20,
+        "wins": 12,
+        "draws": 0,
+        "losses": 8,
+        "score": 0.6,
+        "plies": 81,
+        "elo": 70
+      },
+      {
+        "a": 2,
+        "b": 1,
+        "games": 20,
+        "wins": 18,
+        "draws": 0,
+        "losses": 2,
+        "score": 0.9,
+        "plies": 85,
+        "elo": 382
+      },
+      {
+        "a": 3,
+        "b": 2,
+        "games": 20,
+        "wins": 17,
+        "draws": 0,
+        "losses": 3,
+        "score": 0.85,
+        "plies": 86,
+        "elo": 301
+      },
+      {
+        "a": 4,
+        "b": 3,
+        "games": 20,
+        "wins": 16,
+        "draws": 0,
+        "losses": 4,
+        "score": 0.8,
+        "plies": 82,
+        "elo": 241
+      },
+      {
+        "a": 5,
+        "b": 4,
+        "games": 20,
+        "wins": 16,
+        "draws": 0,
+        "losses": 4,
+        "score": 0.8,
+        "plies": 83,
+        "elo": 241
+      },
+      {
+        "a": 6,
+        "b": 5,
+        "games": 20,
+        "wins": 18,
+        "draws": 0,
+        "losses": 2,
+        "score": 0.9,
+        "plies": 72,
+        "elo": 382
+      },
+      {
+        "a": 7,
+        "b": 6,
+        "games": 20,
+        "wins": 19,
+        "draws": 0,
+        "losses": 1,
+        "score": 0.95,
+        "plies": 70,
+        "elo": 512
+      }
+    ],
+    "error": 1.517472871082021,
+    "stride": 0.25
+  }
+}
