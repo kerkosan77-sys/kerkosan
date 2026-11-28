@@ -2,11 +2,11 @@
 
 Kendi oyunlarından öğrenmek için kişisel bir akıl oyunları çalışma uygulaması. Puan ya da sıralama yok; amaç daha iyi oynamak.
 
-Şu an beş oyun var: **Satranç**, **Mangala**, **Go**, **Dama** ve **Reversi**. Ana ekranın üstündeki sekmelerden oyun seçilir; her oyunun aynı dört bölümü vardır:
+Bilgisayara karşı beş oyun var: **Satranç**, **Mangala**, **Go**, **Dama** ve **Reversi**. Bir de tek başına oynanan **Mayın Tarlası** var (bkz. aşağıda). Ana ekranın üstündeki sekmelerden oyun seçilir; bilgisayara karşı oynanan her oyunun aynı dört bölümü vardır:
 
 - **Dersler:** Temel bilgileri bir kurs gibi adım adım öğreten kısa dersler: kısa açıklamalar ve tahtada "sıra sende" alıştırmaları.
 
-- **Oyna:** Bilgisayara karşı, 8 zorluk seviyesinde. Koç modu her hamleden önce kısa bir hatırlatma gösterir, bir şey kaptıracak bir hamle yaparsan seni uyarır ve **↶ Geri al** ile hamleni geri alabilirsin.
+- **Oyna:** Bilgisayara karşı, 8 zorluk seviyesinde. Koç modu her hamleden önce kısa bir hatırlatma gösterir, bir şey kaptıracak bir hamle yaparsan seni uyarır ve **↶ Geri al** ile hamleni geri alabilirsin. Satranç, Go ve Dama'da oyuncu adlarının yanında **alınan taşlar** görünür: satrançta her oyuncunun aldığı taşlar ve öndeki tarafın kaç puan önde olduğu (piyon 1, at ve fil 3, kale 5, vezir 9; ör. "♟♞ +4"), Go ve Dama'da kaç taş aldığı ("×5"). Analizde de tahtadaki hamleye göre değişir. Mangala ve Reversi'de gösterilmez.
 - **Analiz:** Chess.com'un oyun incelemesi gibi: senin ve rakibinin **her hamlesine** bir etiket (Parlak, Harika, En iyi, Çok iyi, İyi, Zorunlu, Yanlışlık, Hata, Büyük hata) ve kısa, sade Türkçe bir açıklama verir.
 - **Bulmaca:** Kendi hatalarından oluşan bulmacalar, aralıklı tekrarla (1, 3, 7, 14, 30 gün) yeniden karşına çıkar.
 
@@ -278,6 +278,18 @@ Açıklamalar şunları tanır:
 
 ### Bulmaca
 İpucu önce köşeleri gösterir ya da oyundaki hamlenin rakibe açtığı köşeyi kırmızıyla işaretler; yoksa doğru hamlenin tahtanın hangi çeyreğinde olduğunu söyleyip oradaki oynanabilir kareleri işaretler.
+
+## Mayın Tarlası
+
+Tek başına oynanır; bilgisayar rakibi, analizi ve bulmacası yoktur.
+
+- Amaç: mayın olmayan bütün kareleri açmak. Açılan sayı, çevresindeki 8 karede kaç mayın olduğunu söyler.
+- Dört zorluk: **Çok kolay** (8×8, 6 mayın), **Kolay** (9×9, 10), **Orta** (16×16, 40), **Zor** (16×30, 99; telefonda dik, bilgisayarda yatay durur).
+- Kareye dokun: açılır. **Basılı tut** (bilgisayarda sağ tık): bayrak. İstersen **🚩 Bayrak** düğmesiyle dokunuşlar bayrak koyar. Çevresinde sayısı kadar bayrak olan bir sayıya dokununca kalan kareler birden açılır.
+- İlk açtığın kare hep güvenlidir, çevresi de.
+- **💡 İpucu:** Koç yalnızca tahtada görünen sayılara bakar (bayraklara güvenmez) ve sıradaki adımı nedeniyle söyler: "Bu 1 sayısının çevresinde tek kapalı kare kalmış, demek ki mayın orada", "Bu 2 sayısının çevresindeki 2 mayın belli, diğer kareler güvenli" ya da iki sayıyı birlikte düşünmeyi gerektiren durumlarda "A ve B sayılarına birlikte bak…". Yanlış yere konmuş bir bayrağı fark ederse söyler. Kesin bilinen bir kare yoksa mayın olma ihtimali en düşük görünen kareyi önerir.
+- **Mayına basınca** koç ne olduğunu söyler: o karenin mayın olduğu belli miydi, açılabilecek kesin güvenli kareler var mıydı (yeşil çerçeveyle gösterir), yoksa kaçınılmaz bir tahmin miydi.
+- Her zorluk için kazandığın oyunlar, üst üste galibiyetler ve **ipucusuz** en iyi süren saklanır; ana ekrandaki Mayın Tarlası sekmesinde görünür. İpucu kullanılan oyunlar en iyi süreye sayılmaz.
 
 ---
 

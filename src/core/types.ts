@@ -172,6 +172,18 @@ export interface PuzzleHint {
   marks: BoardMark[]
 }
 
+/** What one player has taken from the other so far, shown next to the player's name. */
+export interface CaptureInfo {
+  /** One entry per kind of piece taken, least valuable first ("piyon", "at"; "taş" in Go and Dama). */
+  pieces: { glyph: string; name: string; count: number }[]
+  /** Colour of the taken pieces (the other player's colour). */
+  color: 'w' | 'b'
+  /** How far ahead this player is in material, in the game's own points; 0 when level or behind. */
+  lead: number
+  /** Games with many identical stones: one stone and "×N" instead of every piece. */
+  compact?: boolean
+}
+
 /**
  * Everything the shared screens (play, analysis, puzzles, progress) need from a game.
  * `S` is the game's own in-memory state; screens only pass it back to the module.
@@ -276,6 +288,11 @@ export interface GameModule<S = unknown> {
   compareAfterBest?: boolean
   /** Bump when this game's analysis or explanations change: its stored analyses are redone. */
   analysisRevision?: number
+  /**
+   * Pieces each player has taken so far (chess, Go, Dama), shown next to the players' names.
+   * `history` holds the moves that led to `position` (Go counts its captures from them).
+   */
+  captures?(position: string, history: Pick<MoveRecord, 'side' | 'before' | 'after'>[]): Record<Side, CaptureInfo>
   /** Games scored by area (Go): the likely territory now, for the "Alanı göster" button in learning mode. */
   territory?(state: S): { marks: BoardMark[]; text: string }
   /** Games counted at the end (Go): the user may correct which stones count as dead. */

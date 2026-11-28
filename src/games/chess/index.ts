@@ -10,6 +10,7 @@ import { explainMove } from './logic/explain'
 import { chessPhase, describeChessMove } from './logic/describe'
 import { detectGameEnd, pgnDate } from './logic/gameEnd'
 import { shouldWarn } from './logic/hanging'
+import { chessCaptures } from './logic/material'
 import { parseUci, playUci, uciToSan } from './logic/motifs'
 import { PIECE_WORDS, formatSan } from './logic/pieces'
 import { winPercent } from './logic/winPercent'
@@ -266,6 +267,7 @@ export const chessModule: GameModule<ChessState> = {
     }),
   describeMove: describeChessMove,
   lessons: [...CHESS_LESSONS, ...CHESS_LESSONS_2],
+  captures: (position) => chessCaptures(position),
   phaseOf: (position) => chessPhase(position),
   statusNote: (state, userSide) =>
     state.game.turn() === userSide && state.game.inCheck() ? 'Şah! Şahını tehlikeden kurtarman gerekiyor.' : null,

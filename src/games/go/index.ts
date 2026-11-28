@@ -26,6 +26,7 @@ import {
   type GoPosition,
 } from './rules'
 import { goCoachQuestions, goCoachTip, goCoachWarning } from './coach'
+import { goCaptures } from './captures'
 import { describeGoMove, goPhase } from './describe'
 import { explainGoMove } from './explain'
 import { goPuzzleHint } from './hints'
@@ -237,6 +238,7 @@ export const goModule: GameModule<GoState> = {
   describeMove: describeGoMove,
   territory: (state) => territoryView(state.position),
   lessons: [...GO_LESSONS, ...GO_LESSONS_2],
+  captures: (_position, history) => goCaptures(history),
   phaseOf: (position) => goPhase(position),
   statusNote(state, userSide) {
     const last = state.moves[state.moves.length - 1]

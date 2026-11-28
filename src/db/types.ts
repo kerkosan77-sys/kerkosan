@@ -95,7 +95,8 @@ export interface GameSettings {
 }
 
 export interface AppSettings {
-  lastGame: GameId
+  /** The selected home-screen tab: a game, or Mayın Tarlası. */
+  lastGame: GameId | 'minesweeper'
   chesscomUsername: string
 }
 
@@ -114,4 +115,20 @@ export interface SavedPlay {
   /** Missing in games saved before modes existed: those had the coach on, so they count as learning. */
   mode?: PlayMode
   coachStats?: CoachStats
+}
+
+/** Mayın Tarlası results on one level. */
+export interface MineLevelStats {
+  played: number
+  won: number
+  /** Fastest win in seconds without hints, or null. */
+  best: number | null
+  /** Wins in a row. */
+  streak: number
+}
+
+export interface MineStats {
+  /** The level played last. */
+  level: number
+  levels: Record<string, MineLevelStats>
 }

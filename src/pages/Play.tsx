@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Captures from '../components/Captures'
 import EvalBar from '../components/EvalBar'
 import MoveList from '../components/MoveList'
 import Toggle from '../components/Toggle'
@@ -553,6 +554,7 @@ export default function Play({ game }: { game: GameModule }) {
   const position = game.position(state)
   const history = game.history(state)
   const lastMove = history.length > 0 ? history[history.length - 1].code : null
+  const captures = game.captures?.(position, history)
   const canMove = !end && !thinking && engineState === 'ready'
   const canTakeBack = gameMode === 'learn' && !end && undoStack.current.some((earlier) => game.turn(earlier) === userSide)
   const userToMove = !end && !thinking && game.turn(state) === userSide
@@ -578,6 +580,7 @@ export default function Play({ game }: { game: GameModule }) {
             <span className="player-dot" data-color={dotColor(game, userSide === 'w' ? 'b' : 'w')} />
             Bilgisayar · {level.name}
             {thinking && <span className="thinking">düşünüyor…</span>}
+            <Captures info={captures?.[userSide === 'w' ? 'b' : 'w']} you={false} />
           </div>
           <div className="board-with-bar">
             {coachOn && <EvalBar win={coach.win} userColor={dotColor(game, userSide)} />}
@@ -595,6 +598,7 @@ export default function Play({ game }: { game: GameModule }) {
           <div className="player-tag">
             <span className="player-dot" data-color={dotColor(game, userSide)} />
             Sen · {game.sideLabels[userSide]}
+            <Captures info={captures?.[userSide]} you />
             <span className={`mode-chip ${gameMode}`}>{MODE_LABELS[gameMode]}</span>
           </div>
         </div>

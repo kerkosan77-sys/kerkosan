@@ -76,6 +76,11 @@ html {
   --accent-strong: #6cb3b6;
 }
 
+:root[data-game='minesweeper'] {
+  --accent: #b49a3a;
+  --accent-strong: #cbb257;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     transition: none;
@@ -1944,8 +1949,9 @@ button.level-box:hover,
 
 .player-tag {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
   padding: 8px 2px;
   font-weight: 600;
 }
@@ -1964,6 +1970,64 @@ button.level-box:hover,
 
 .player-dot[data-color='b'] {
   background: #222;
+}
+
+/* Taken pieces next to a player's name. */
+.captures {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  min-width: 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.cap-pieces {
+  font-size: 1.25rem;
+  line-height: 1;
+  letter-spacing: -0.3em;
+  padding-right: 0.3em;
+  font-family: 'Segoe UI Symbol', 'Noto Sans Symbols 2', 'DejaVu Sans', sans-serif;
+}
+
+.cap-pieces[data-color='w'] {
+  color: #f4f2ea;
+  text-shadow: 1px 0 0 #111, -1px 0 0 #111, 0 1px 0 #111, 0 -1px 0 #111;
+}
+
+.cap-pieces[data-color='b'] {
+  color: #1d1d1d;
+  text-shadow: 1px 0 0 #d4d4cc, -1px 0 0 #d4d4cc, 0 1px 0 #d4d4cc, 0 -1px 0 #d4d4cc;
+}
+
+.cap-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cap-stone {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #8a8a80;
+}
+
+.cap-stone[data-color='w'] {
+  background: #fff;
+}
+
+.cap-stone[data-color='b'] {
+  background: #222;
+}
+
+.cap-lead {
+  color: var(--accent-strong);
+  font-weight: 700;
 }
 
 .thinking {
@@ -3865,4 +3929,292 @@ textarea:focus {
     overflow: visible;
     -webkit-line-clamp: unset;
   }
+}
+
+/* ---------- Mayın Tarlası ---------- */
+
+.home-screen .home-buttons.solo {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.mine-home-levels {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mine-home-note {
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .mine-home-levels {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.mine-levels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mine-levels button {
+  display: grid;
+  gap: 2px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+
+.mine-levels button small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.mine-levels button.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.mine-levels button.selected strong {
+  color: var(--accent-strong);
+}
+
+.mine-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.mine-board-column {
+  min-width: 0;
+}
+
+.mine-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mine-counter {
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mine-flag-btn {
+  margin-left: auto;
+}
+
+/* The squares fill the column; on very tall boards they stop growing so the board fits the screen. */
+.mine-grid {
+  --gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--gap);
+  width: min(100%, calc(var(--cols) * 44px), calc((100dvh - 230px) * var(--cols) / var(--rows)));
+  min-width: min(100%, calc(var(--cols) * 20px));
+  margin: 0 auto;
+  container-type: inline-size;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.mine-cell {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 34%, #2b2b2b);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  font-size: calc(100cqw / var(--cols) * 0.58);
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mine-cell:hover:not(.open) {
+  background: color-mix(in srgb, var(--accent) 46%, #2b2b2b);
+}
+
+.mine-cell:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+.mine-cell.open {
+  background: #161616;
+  box-shadow: none;
+  cursor: default;
+}
+
+.mine-grid.over .mine-cell {
+  cursor: default;
+}
+
+.mine-cell.exploded {
+  background: var(--blunder);
+}
+
+/* Number colours: the classic ones, brightened for the dark board. */
+.mine-cell.n1 { color: #6ea8ff; }
+.mine-cell.n2 { color: #6fcf6f; }
+.mine-cell.n3 { color: #ff7a6e; }
+.mine-cell.n4 { color: #b18cff; }
+.mine-cell.n5 { color: #ffb050; }
+.mine-cell.n6 { color: #4fd1c5; }
+.mine-cell.n7 { color: #f0f0f0; }
+.mine-cell.n8 { color: #a0a0a0; }
+
+/* Hint and loss-review marks. */
+.mine-cell.mark-safe {
+  box-shadow: inset 0 0 0 3px var(--good);
+}
+
+.mine-cell.mark-mine,
+.mine-cell.mark-wrong {
+  box-shadow: inset 0 0 0 3px var(--danger);
+}
+
+.mine-cell.mark-known {
+  box-shadow: inset 0 0 0 2px var(--danger);
+  opacity: 0.85;
+}
+
+.mine-cell.mark-shared {
+  outline: 2px dashed var(--warn);
+  outline-offset: -4px;
+}
+
+.mine-cell.mark-guess {
+  box-shadow: inset 0 0 0 3px var(--warn);
+}
+
+.mine-cell.mark-clue {
+  background: color-mix(in srgb, var(--warn) 26%, #161616);
+  box-shadow: inset 0 0 0 2px var(--warn);
+}
+
+.mine-cell[data-tag]::after {
+  content: attr(data-tag);
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--warn);
+  color: #111;
+  font-size: 11px;
+  line-height: 16px;
+  z-index: 2;
+}
+
+.mine-hint,
+.mine-end {
+  margin: 0 0 10px;
+}
+
+.mine-hint {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  line-height: 1.45;
+}
+
+.mine-stats h2 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.mine-rules summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.mine-rules ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  line-height: 1.45;
+}
+
+.mine-rules li + li {
+  margin-top: 4px;
+}
+
+@media (max-width: 860px) {
+  .mine-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mine-grid {
+    width: min(100%, calc(var(--cols) * 44px));
+  }
+}
+
+@media (max-width: 600px) {
+  .mine-levels {
+    gap: 6px;
+  }
+
+  .mine-levels button {
+    padding: 6px 2px;
+  }
+
+  .mine-levels button strong {
+    font-size: 0.85rem;
+  }
+
+  .mine-levels button small {
+    font-size: 0.66rem;
+  }
+
+  .mine-grid {
+    --gap: 1px;
+  }
+
+  .mine-toolbar {
+    gap: 6px;
+  }
+
+  .mine-counter {
+    padding: 6px 8px;
+  }
+
+  .mine-toolbar .btn {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .mine-cell {
+    border-radius: 2px;
+  }
+}
+
+/* Phones hide the small lines of the game summaries, but here they hold the results. */
+.mine-home-levels .level-box small,
+.mine-stats .level-box small {
+  display: block;
 }

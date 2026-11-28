@@ -34,21 +34,24 @@ import { setGameTheme } from '../core/theme'
 import { navigate } from '../router'
 import { PHASE_LABELS, type GameModule, type GamePhase } from '../core/types'
 import { backupFileName, restoredText } from '../db/backup'
+import type { MineStats } from '../db/types'
 import {
   exportBackup,
   importBackup,
   listGames,
   loadAppSettings,
+  loadMineStats,
   readBackup,
   updateAppSettings,
 } from '../db/db'
-import { GAMES, UPCOMING, gameById } from '../games/registry'
+import { GAMES, MINESWEEPER, TABS, UPCOMING, gameById, isSoloGame, type SoloGame } from '../games/registry'
+import { MINE_LEVELS, levelById, timeText } from '../games/minesweeper/logic'
 
 /** Work done once when the app opens (not on every return to the home screen): sync, and analysing missed games. */
 let startedThisVisit = false
 
 export default function Home() {
-  const [selected, setSelected] = useState<GameModule | null>(null)
+  const [selected, setSelected] = useState<GameModule | SoloGame | null>(null)
   /** Every game's summary, loaded up front so switching games is instant. */
   const [progress, setProgress] = useState<Record<string, Progress>>(() => {
     const known: Record<string, Progress> = {}
@@ -65,7 +68,9 @@ export default function Home() {
   const [dataVersion, setDataVersion] = useState(0)
 
   useEffect(() => {
-    loadAppSettings().then((settings) => setSelected(gameById(settings.lastGame) ?? GAMES[0]))
+    loadAppSettings().then((settings) =>
+      setSelected(settings.lastGame === MINESWEEPER.id ? MINESWEEPER : (gameById(settings.lastGame) ?? GAMES[0])),
+    )
     if (startedThisVisit) return
     startedThisVisit = true
     // Games never analysed (for example finished while the app was closed) get analysed now, so their puzzles exist.
@@ -97,7 +102,7 @@ export default function Home() {
     if (selected) setGameTheme(selected.id)
   }, [selected])
 
-  function choose(game: GameModule) {
+  function choose(game: GameModule | SoloGame) {
     setSelected(game)
     void updateAppSettings({ lastGame: game.id })
   }
@@ -105,9 +110,9 @@ export default function Home() {
   /** The next (step 1) or previous (step -1) game, going round. */
   function step(by: 1 | -1) {
     if (!selected) return
-    const index = (GAMES.indexOf(selected) + by + GAMES.length) % GAMES.length
-    setSelected(GAMES[index])
-    void updateAppSettings({ lastGame: GAMES[index].id })
+    const index = (TABS.indexOf(selected) + by + TABS.length) % TABS.length
+    setSelected(TABS[index])
+    void updateAppSettings({ lastGame: TABS[index].id })
   }
 
   // Keyboard: ← → switch games, Enter starts playing (when nothing else has the focus).
@@ -118,7 +123,8 @@ export default function Home() {
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
       if (event.key === 'ArrowRight') step(1)
       else if (event.key === 'ArrowLeft') step(-1)
-      else if (event.key === 'Enter' && selected && (target === document.body || target === null)) navigate(`${selected.slug}/oyna`)
+      else if (event.key === 'Enter' && selected && (target === document.body || target === null))
+        navigate(isSoloGame(selected) ? selected.slug : `${selected.slug}/oyna`)
       else return
       event.preventDefault()
     }
@@ -142,7 +148,9 @@ export default function Home() {
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1)
   }
 
-  const current = selected ? (progress[selected.id] ?? null) : null
+  /** The selected game against the computer (null on the Mayın Tarlası tab). */
+  const module = selected && !isSoloGame(selected) ? selected : null
+  const current = module ? (progress[module.id] ?? null) : null
 
   return (
     <div className="home-screen" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
@@ -163,7 +171,7 @@ export default function Home() {
       </header>
 
       <div className="game-tabs" role="tablist" aria-label="Oyun seçimi">
-        {GAMES.map((game) => (
+        {TABS.map((game) => (
           <button
             key={game.id}
             type="button"
@@ -190,28 +198,29 @@ export default function Home() {
       </div>
 
       <main className="home-main">
-        {selected && (
+        {selected && isSoloGame(selected) && <MineHome />}
+        {module && (
           <>
             <nav className="home-buttons">
               <HomeButton
-                href={`#/${selected.slug}/oyna`}
+                href={`#/${module.slug}/oyna`}
                 icon="♟"
                 title="Oyna"
-                text={current ? `Sana uygun bot: ${current.summary.recommended}. seviye · ${levelName(selected, current.summary.recommended)}` : 'Bilgisayara karşı, kendi seviyende oyna'}
+                text={current ? `Sana uygun bot: ${current.summary.recommended}. seviye · ${levelName(module, current.summary.recommended)}` : 'Bilgisayara karşı, kendi seviyende oyna'}
                 className="play"
               />
-              {selected.lessons && selected.lessons.length > 0 && (
-                <HomeButton href={`#/${selected.slug}/dersler`} icon="📘" title="Dersler" className="lessons" />
+              {module.lessons && module.lessons.length > 0 && (
+                <HomeButton href={`#/${module.slug}/dersler`} icon="📘" title="Dersler" className="lessons" />
               )}
-              <HomeButton href={`#/${selected.slug}/analiz`} icon="🔍" title="Analiz" />
+              <HomeButton href={`#/${module.slug}/analiz`} icon="🔍" title="Analiz" />
               <HomeButton
-                href={`#/${selected.slug}/bulmaca`}
+                href={`#/${module.slug}/bulmaca`}
                 icon="🧩"
                 title="Bulmaca"
                 badge={current?.due || undefined}
               />
             </nav>
-            <PlayerCard game={selected} progress={current} onShowRanks={() => setPanel('ranks')} />
+            <PlayerCard game={module} progress={current} onShowRanks={() => setPanel('ranks')} />
           </>
         )}
       </main>
@@ -241,14 +250,66 @@ export default function Home() {
       </footer>
 
       {panel && (
-        <Modal title={panel === 'ranks' && selected ? `${PANEL_TITLES.ranks} · ${selected.name}` : PANEL_TITLES[panel]} onClose={() => setPanel(null)}>
+        <Modal title={panel === 'ranks' && module ? `${PANEL_TITLES.ranks} · ${module.name}` : PANEL_TITLES[panel]} onClose={() => setPanel(null)}>
           {panel === 'data' && <DataCard onRestored={() => setDataVersion((v) => v + 1)} />}
           {panel === 'install' && <InstallCard />}
           {panel === 'cloud' && <CloudCard onSynced={() => setDataVersion((v) => v + 1)} />}
-          {panel === 'ranks' && selected && <RankCard game={selected} points={current?.summary.points ?? 0} />}
+          {panel === 'ranks' && module && <RankCard game={module} points={current?.summary.points ?? 0} />}
         </Modal>
       )}
     </div>
+  )
+}
+
+/** The Mayın Tarlası tab: a play button and the results on every level. */
+function MineHome() {
+  const [stats, setStats] = useState<MineStats | null>(null)
+  useEffect(() => {
+    let alive = true
+    loadMineStats()
+      .then((loaded) => alive && setStats(loaded))
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [])
+  const level = levelById(stats?.level ?? 2)
+
+  return (
+    <>
+      <nav className="home-buttons solo">
+        <HomeButton
+          href={`#/${MINESWEEPER.slug}`}
+          icon="💣"
+          title="Oyna"
+          text={`${level.name} · mayınları bul, tarlayı temizle`}
+          className="play"
+        />
+      </nav>
+      <section className="player-card" aria-busy={stats ? undefined : true}>
+        <div className="player-head">
+          <h2>
+            Sonuçların<span className="player-game-name"> · Mayın Tarlası</span>
+          </h2>
+        </div>
+        <div className="player-levels mine-home-levels">
+          {MINE_LEVELS.map((option) => {
+            const entry = stats?.levels[String(option.id)]
+            return (
+              <div key={option.id} className={`level-box${option.id === level.id ? ' suggested' : ''}`}>
+                <span>{option.name}</span>
+                <strong>{entry?.best != null ? timeText(entry.best) : '—'}</strong>
+                <small>{entry && entry.played > 0 ? `${entry.won} / ${entry.played} kazandın` : 'henüz oynamadın'}</small>
+              </div>
+            )
+          })}
+        </div>
+        <p className="muted small mine-home-note">
+          Süreler ipucusuz kazandığın en hızlı oyunlar. Takılınca oyundaki 💡 İpucu düğmesi hangi karenin kesin güvenli olduğunu ve
+          nedenini gösterir.
+        </p>
+      </section>
+    </>
   )
 }
 

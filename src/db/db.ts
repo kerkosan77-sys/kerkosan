@@ -9,6 +9,7 @@ import {
   type AttemptRecord,
   type GameRecord,
   type GameSettings,
+  type MineStats,
   type PuzzleRecord,
   type SavedPlay,
 } from './types'
@@ -103,6 +104,13 @@ async function setValue(key: string, value: unknown): Promise<void> {
 async function deleteValue(key: string): Promise<void> {
   await (await getDB()).delete('kv', key)
 }
+
+/** Mayın Tarlası: the level played last and the results on each level. */
+export async function loadMineStats(): Promise<MineStats> {
+  return { level: 2, levels: {}, ...(await getValue<Partial<MineStats>>('minesweeper:stats')) }
+}
+
+export const saveMineStats = (stats: MineStats) => setValue('minesweeper:stats', stats)
 
 export async function loadAppSettings(): Promise<AppSettings> {
   return { ...DEFAULT_APP_SETTINGS, ...(await getValue<Partial<AppSettings>>('settings:app')) }

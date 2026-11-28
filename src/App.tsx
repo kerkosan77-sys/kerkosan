@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { setGameTheme } from './core/theme'
 import { useRoute } from './router'
-import { gameBySlug } from './games/registry'
+import { MINESWEEPER, gameBySlug } from './games/registry'
 import Home from './pages/Home'
 import Play from './pages/Play'
 import Analysis from './pages/Analysis'
 import Puzzles from './pages/Puzzles'
 import Lessons from './pages/Lessons'
+import Minesweeper from './pages/Minesweeper'
 
 /** Addresses from the chess-only version ("#/oyna", "#/analiz/<id>") now live under "#/satranc/...". */
 const LEGACY_PAGES = ['oyna', 'analiz', 'bulmaca']
@@ -22,9 +23,12 @@ export default function App() {
   const [slug, page, param, extra] = legacy ? ['satranc', ...segments] : segments
   const game = gameBySlug(slug)
   // Each game's pages use its colour (the home screen sets it for the selected game).
+  const solo = slug === MINESWEEPER.slug
   useEffect(() => {
     if (game) setGameTheme(game.id)
-  }, [game])
+    else if (solo) setGameTheme(MINESWEEPER.id)
+  }, [game, solo])
+  if (solo) return <Minesweeper />
   if (!game) return <Home />
 
   switch (page) {

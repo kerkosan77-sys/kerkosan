@@ -14,6 +14,21 @@ export const GAMES: GameModule[] = [
   reversiModule as GameModule,
 ]
 
+/** A game played alone, with a page of its own instead of the shared play, analysis and puzzle screens. */
+export interface SoloGame {
+  id: 'minesweeper'
+  slug: string
+  name: string
+  icon: string
+}
+
+export const MINESWEEPER: SoloGame = { id: 'minesweeper', slug: 'mayin-tarlasi', name: 'Mayın Tarlası', icon: '💣' }
+
+/** The home screen tabs: the games against the computer, then Mayın Tarlası. */
+export const TABS: (GameModule | SoloGame)[] = [...GAMES, MINESWEEPER]
+
+export const isSoloGame = (tab: GameModule | SoloGame): tab is SoloGame => tab.id === MINESWEEPER.id
+
 /** Shown as "coming soon" tabs until their module exists. */
 export const UPCOMING: { name: string; icon: string }[] = []
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Captures from './Captures'
 import EvalBar from './EvalBar'
 import MoveList, { type MoveItem } from './MoveList'
 import TopBar from './TopBar'
@@ -218,6 +219,8 @@ export default function GameReview({ game: module, gameId, initialPly }: GameRev
   const barWin = current ? ((showBefore ? current.winBefore : current.winAfter) ?? null) : (moves[0].winBefore ?? null)
 
   const outcome = outcomeFor(record.result, record.userSide)
+  // Moves that led to the position on the board (the one before a flagged move is shown first).
+  const captures = module.captures?.(position, moves.slice(0, current ? (showBefore ? ply : ply + 1) : 0))
   const opponentSide = record.userSide === 'w' ? 'b' : 'w'
   const hasErrors = moves.some(isError)
 
@@ -229,6 +232,7 @@ export default function GameReview({ game: module, gameId, initialPly }: GameRev
           <div className="player-tag">
             <span className="player-dot" data-color={dotColor(module, opponentSide)} />
             {record.names[opponentSide]}
+            <Captures info={captures?.[opponentSide]} you={false} />
           </div>
           <div className="board-with-bar">
             <EvalBar win={barWin} userColor={dotColor(module, record.userSide)} />
@@ -245,6 +249,7 @@ export default function GameReview({ game: module, gameId, initialPly }: GameRev
             <span className="player-dot" data-color={dotColor(module, record.userSide)} />
             {record.names[record.userSide] === 'Sen' ? 'Sen' : `${record.names[record.userSide]} (sen)`} ·{' '}
             {OUTCOME_LABELS[outcome]}
+            <Captures info={captures?.[record.userSide]} you />
           </div>
           <div className="nav-row">
             <button type="button" className="btn icon" onClick={() => go(-1)} disabled={ply < 0} aria-label="Başa dön">

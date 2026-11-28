@@ -1,5 +1,6 @@
 import type { GameEnd, GameModule, MoveRecord, MoverResult, ReadGame, RecordMeta, Score, Side } from '../../core/types'
 import { damaCoachQuestions, damaCoachTip, damaCoachWarning } from './coach'
+import { damaCaptures } from './captures'
 import DamaBoard from './DamaBoard'
 import { damaEngine } from './engine'
 import { damaPhase, describeDamaMove } from './describe'
@@ -242,6 +243,7 @@ export const damaModule: GameModule<DamaState> = {
   explain: explainDamaMove,
   describeMove: describeDamaMove,
   lessons: [...DAMA_LESSONS, ...DAMA_LESSONS_2],
+  captures: (position) => damaCaptures(position),
   phaseOf: (position) => damaPhase(position),
   statusNote(state, userSide) {
     if (state.position.turn !== userSide) return null
